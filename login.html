@@ -57,16 +57,25 @@
       const email = e.target.email.value.trim();
       const password = e.target.password.value.trim();
       const msg = document.getElementById('msg');
-      msg.textContent = '';
+      msg.textContent = 'Working...';
 
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      try {
+        if (typeof supabase === 'undefined' || !supabase.auth) {
+          msg.textContent = 'Error: Supabase library did not load. Check supabaseClient.js is uploaded and your internet connection.';
+          return;
+        }
 
-      if (error) {
-        msg.textContent = error.message;
-        return;
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+        if (error) {
+          msg.textContent = error.message;
+          return;
+        }
+
+        window.location.href = 'dashboard.html';
+      } catch (err) {
+        msg.textContent = 'Unexpected error: ' + err.message;
       }
-
-      window.location.href = 'dashboard.html';
     };
   </script>
 </body>

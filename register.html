@@ -41,18 +41,27 @@
       const password = e.target.password.value.trim();
       const msg = document.getElementById('msg');
       msg.style.color = 'red';
-      msg.textContent = '';
+      msg.textContent = 'Working...';
 
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      try {
+        if (typeof supabase === 'undefined' || !supabase.auth) {
+          msg.textContent = 'Error: Supabase library did not load. Check supabaseClient.js is uploaded and your internet connection.';
+          return;
+        }
 
-      if (error) {
-        msg.textContent = error.message;
-        return;
+        const { data, error } = await supabase.auth.signUp({ email, password });
+
+        if (error) {
+          msg.textContent = error.message;
+          return;
+        }
+
+        msg.style.color = 'green';
+        msg.textContent = 'Registration successful! Check your email to confirm, then login.';
+        setTimeout(() => window.location.href = 'login.html', 2500);
+      } catch (err) {
+        msg.textContent = 'Unexpected error: ' + err.message;
       }
-
-      msg.style.color = 'green';
-      msg.textContent = 'Registration successful! Check your email to confirm, then login.';
-      setTimeout(() => window.location.href = 'login.html', 2500);
     };
   </script>
 </body>
