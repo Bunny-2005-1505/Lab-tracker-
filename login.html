@@ -2,7 +2,7 @@
 <html>
 <head>
   <title>Login - LabTracker</title>
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabaseClient.js"></script>
   <style>
     body { font-family: Arial; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; background-image: url("chemistry-lab-illustrated-background_52683-68249.jpg"); background-size: cover; flex-direction: column; }
@@ -61,7 +61,10 @@
 
       try {
         if (typeof supabase === 'undefined' || !supabase.auth) {
-          msg.textContent = 'Error: Supabase library did not load. Check supabaseClient.js is uploaded and your internet connection.';
+          await new Promise(r => setTimeout(r, 1500));
+        }
+        if (typeof supabase === 'undefined' || !supabase.auth) {
+          msg.textContent = 'Error: Supabase library did not load (slow/blocked connection). Please wait for the page to fully load, then try again.';
           return;
         }
 
