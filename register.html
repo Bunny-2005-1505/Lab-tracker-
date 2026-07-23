@@ -2,7 +2,6 @@
 <html>
 <head>
   <title>Register - LabTracker</title>
-  <script src="supabase-js.min.js"></script>
   <script src="supabaseClient.js"></script>
   <style>
     body { font-family: Arial; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; background-image: url("chemistry-lab-illustrated-background_52683-68249.jpg"); background-size: cover; }
@@ -44,14 +43,6 @@
       msg.textContent = 'Working...';
 
       try {
-        if (typeof supabase === 'undefined' || !supabase.auth) {
-          await new Promise(r => setTimeout(r, 1500));
-        }
-        if (typeof supabase === 'undefined' || !supabase.auth) {
-          msg.textContent = 'Error: Supabase library did not load (slow/blocked connection). Please wait for the page to fully load, then try again.';
-          return;
-        }
-
         const { data, error } = await supabase.auth.signUp({ email, password });
 
         if (error) {
