@@ -2,8 +2,6 @@
 <html>
 <head>
   <title>Add Product - LabTracker</title>
-  <script src="html5-qrcode.min.js"></script>
-  <script src="supabase-js.min.js"></script>
   <script src="supabaseClient.js"></script>
   <style>
     body { font-family: Arial;width: 100vw; margin: auto; padding: 20px;background-image: url("download__1_.jpg");background-size: cover;backdrop-filter: blur(10px); }
@@ -11,7 +9,6 @@
     button { background-color: teal; color: white; border:none; cursor:pointer; border-radius: 5px; }
     button:hover { background-color: #007770; }
     h2{width: 100%; text-align: center;font-size:30px}
-    #reader {margin-left: 35vw; }
     img{
     height: 70px;
     margin-right: 5%;
@@ -35,7 +32,7 @@
     </select>
   </label>
   <label>QR Code
-    <input type="text" id="qrCode" placeholder="Scan QR or enter code" />
+    <input type="text" id="qrCode" placeholder="Enter code" />
   </label>
   <label>Name
     <input type="text" id="name" required />
@@ -53,8 +50,6 @@
 </form>
 
 <div id="msg" style="color:red; margin-top:10px;"></div>
-
-<div id="reader" style="margin-top: 15px; max-width: 300px;"></div>
 
 <button onclick="location.href='dashboard.html'">Back to Dashboard</button>
 
@@ -113,13 +108,6 @@
     }
     e.target.reset();
   });
-
-  function onScanSuccess(decodedText) {
-    document.getElementById('qrCode').value = decodedText;
-  }
-
-  const scanner = new Html5QrcodeScanner('reader', { fps: 10, qrbox: 250 });
-  scanner.render(onScanSuccess);
 </script>
 
 </body>
