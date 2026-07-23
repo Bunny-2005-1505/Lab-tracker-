@@ -2,14 +2,13 @@
 <html>
 <head>
   <title>Dashboard - LabTracker</title>
-  <script src="supabase-js.min.js"></script>
   <script src="supabaseClient.js"></script>
   <style>
     body { font-family: Arial; width: 100vw; height: 100vh; margin: auto; padding-top: 50px; text-align: center; background-image: url("cartoon-laboratory-room-with-flasks_23-2148899916.jpg"); background-size: cover; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
     button { width: 350px; margin: 10px 0; padding: 15px; font-size: 18px; cursor: pointer; background: #32CD32; color: white; border: none; border-radius: 5px; }
     button:hover { background: #007770; }
     h1 { width: 100vw; text-align: center; justify-content: center; font-size: 50px; }
-    header { position: absolute; top: 0; left: 0; background: rgba(255, 255, 255, 0.7); width: 100vw; padding: 10px 0; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+    header { position: absolute; top: 0; left: 0; background: rgba(255, 255, 255, 0.7); width: 100vw; padding: 10px 0; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); display: flex; align-items: center; justify-content: center; }
     h2 { color: rgb(0, 0, 0); margin-bottom: 50px; font-size: 30px; }
     .follow-us {
       position: fixed;
@@ -31,16 +30,6 @@
     .follow-us a:hover {
       text-decoration: underline;
     }
-    .logo {
-  height:20px;
-  margin-right: 15px;
-  vertical-align: middle;
-}
-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
   </style>
 </head>
 <body>
