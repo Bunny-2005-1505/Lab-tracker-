@@ -2,6 +2,8 @@
 <html>
 <head>
   <title>Products - LabTracker</title>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="supabaseClient.js"></script>
   <style>
     body { font-family: Arial;width: 92vw;height: 100vh; margin: auto; padding: 20px;background-image: url("download.jpg");background-size: cover;backdrop-filter: blur(5px); }
     table { width: 100%; border-collapse: collapse; }
@@ -35,36 +37,60 @@
 <button onclick="location.href='dashboard.html'">Back to Dashboard</button>
 
 <script>
-  if (!localStorage.getItem('loggedInUser')) location.href = 'login.html';
-
-  const products = JSON.parse(localStorage.getItem('products') || '[]');
-
+  let currentUser = null;
   const tbody = document.getElementById('tableBody');
 
-  function render() {
+  async function loadProducts() {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      alert('Error loading products: ' + error.message);
+      return;
+    }
+    render(data);
+  }
+
+  function render(products) {
     tbody.innerHTML = '';
-    products.forEach((p, i) => {
+    products.forEach((p) => {
       const tr = document.createElement('tr');
+      const canDelete = currentUser && p.user_id === currentUser.id;
       tr.innerHTML = `
         <td>${p.lab}</td>
-        <td>${p.qrCode}</td>
+        <td>${p.qr_code || ''}</td>
         <td>${p.name}</td>
         <td>${p.description || ''}</td>
         <td>${p.quantity}</td>
-        <td>${p.expiryDate}</td>
-        <td><button data-idx="${i}">Delete</button></td>
+        <td>${p.expiry_date}</td>
+        <td>${canDelete ? `<button data-id="${p.id}">Delete</button>` : ''}</td>
       `;
-      tr.querySelector('button').addEventListener('click', () => {
-        products.splice(i, 1);
-        localStorage.setItem('products', JSON.stringify(products));
-        alert('Product deleted.');
-        render();
-      });
+      if (canDelete) {
+        tr.querySelector('button').addEventListener('click', async () => {
+          const { error } = await supabase.from('products').delete().eq('id', p.id);
+          if (error) {
+            alert('Error deleting: ' + error.message);
+            return;
+          }
+          alert('Product deleted.');
+          loadProducts();
+        });
+      }
       tbody.appendChild(tr);
     });
   }
 
-  render();
+  (async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      location.href = 'login.html';
+      return;
+    }
+    currentUser = user;
+    loadProducts();
+  })();
 </script>
 
 </body>

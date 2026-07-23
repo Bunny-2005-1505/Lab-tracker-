@@ -2,6 +2,8 @@
 <html>
 <head>
   <title>Register - LabTracker</title>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="supabaseClient.js"></script>
   <style>
     body { font-family: Arial; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; background-image: url("chemistry-lab-illustrated-background_52683-68249.jpg"); background-size: cover; }
     form { background: rgba(255, 255, 255, 0.448); padding: 30px; border-radius: 8px; box-shadow: 0 0 12px #fffcfc; width: 300px; }
@@ -25,28 +27,32 @@
   <img src="logo.png" alt="">
   <form id="registerForm">
     <h2>Register</h2>
-    <input id="username" placeholder="Username" required />
-    <input id="password" type="password" placeholder="Password" required />
+    <input id="email" type="email" placeholder="Email" required />
+    <input id="password" type="password" placeholder="Password (min 6 characters)" required />
     <button type="submit">Register</button>
     <div id="msg" class="message"></div>
     <p>Already registered? <a href="login.html">Login here</a></p>
   </form>
 
   <script>
-    document.getElementById('registerForm').onsubmit = e => {
+    document.getElementById('registerForm').onsubmit = async (e) => {
       e.preventDefault();
-      const username = e.target.username.value.trim();
+      const email = e.target.email.value.trim();
       const password = e.target.password.value.trim();
+      const msg = document.getElementById('msg');
+      msg.style.color = 'red';
+      msg.textContent = '';
 
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      if (users.some(u => u.username === username)) {
-        document.getElementById('msg').textContent = 'Username taken';
+      const { data, error } = await supabase.auth.signUp({ email, password });
+
+      if (error) {
+        msg.textContent = error.message;
         return;
       }
-      users.push({username, password});
-      localStorage.setItem('users', JSON.stringify(users));
-      alert('Registration successful! Please login.');
-      window.location.href = 'login.html';
+
+      msg.style.color = 'green';
+      msg.textContent = 'Registration successful! Check your email to confirm, then login.';
+      setTimeout(() => window.location.href = 'login.html', 2500);
     };
   </script>
 </body>

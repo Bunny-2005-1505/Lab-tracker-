@@ -3,8 +3,10 @@
 <head>
   <title>Add Product - LabTracker</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="supabaseClient.js"></script>
   <style>
-    body { font-family: Arial;width: 100vw; margin: auto; padding: 20px;background-image: url("download\ \(1\).jpg");background-size: cover;backdrop-filter: blur(10px); }
+    body { font-family: Arial;width: 100vw; margin: auto; padding: 20px;background-image: url("download__1_.jpg");background-size: cover;backdrop-filter: blur(10px); }
     label, input, textarea, select, button { width: 50%; margin: 8px 0; padding: 10px; font-size: 16px;margin-left: 25%; }
     button { background-color: teal; color: white; border:none; cursor:pointer; border-radius: 5px; }
     button:hover { background-color: #007770; }
@@ -57,29 +59,50 @@
 <button onclick="location.href='dashboard.html'">Back to Dashboard</button>
 
 <script>
-  if (!localStorage.getItem('loggedInUser')) location.href = 'login.html';
+  let currentUser = null;
 
-  const products = JSON.parse(localStorage.getItem('products') || '[]');
+  (async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      location.href = 'login.html';
+      return;
+    }
+    currentUser = user;
+  })();
 
-  document.getElementById('addProductForm').addEventListener('submit', e => {
+  document.getElementById('addProductForm').addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const username = localStorage.getItem('loggedInUser');
     const lab = document.getElementById('labSelect').value;
     const qrCode = document.getElementById('qrCode').value.trim();
     const name = document.getElementById('name').value.trim();
     const description = document.getElementById('description').value.trim();
     const quantity = parseInt(document.getElementById('quantity').value);
     const expiryDate = document.getElementById('expiryDate').value;
+    const msgEl = document.getElementById('msg');
 
     if (!lab || !name || quantity <= 0 || !expiryDate) {
-      document.getElementById('msg').textContent = 'Please fill all required fields';
+      msgEl.textContent = 'Please fill all required fields';
       return;
     }
 
-    products.push({ username, lab, qrCode, name, description, quantity, expiryDate });
-    localStorage.setItem('products', JSON.stringify(products));
+    const { error } = await supabase.from('products').insert({
+      user_id: currentUser.id,
+      lab,
+      qr_code: qrCode,
+      name,
+      description,
+      quantity,
+      expiry_date: expiryDate
+    });
 
+    if (error) {
+      msgEl.textContent = error.message;
+      return;
+    }
+
+    msgEl.style.color = 'green';
+    msgEl.textContent = '';
     alert('Product added successfully!');
 
     const now = new Date();

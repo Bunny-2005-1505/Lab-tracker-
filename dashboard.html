@@ -2,6 +2,8 @@
 <html>
 <head>
   <title>Dashboard - LabTracker</title>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="supabaseClient.js"></script>
   <style>
     body { font-family: Arial; width: 100vw; height: 100vh; margin: auto; padding-top: 50px; text-align: center; background-image: url("cartoon-laboratory-room-with-flasks_23-2148899916.jpg"); background-size: cover; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
     button { width: 350px; margin: 10px 0; padding: 15px; font-size: 18px; cursor: pointer; background: #32CD32; color: white; border: none; border-radius: 5px; }
@@ -38,18 +40,12 @@ header {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* ...rest of header styles... */
-  img{
-    height: 70px;
-    margin-right: 5%;
-    vertical-align: middle;
-  }
 }
   </style>
 </head>
 <body>
   <header><h1>Lab Tracker - An Inventory Management System</h1>
-    <img src="logo.png" alt="">
+    <img src="logo.png" alt="" style="height:70px; margin-right:5%;">
   </header>
   <h2>Welcome <span id="usernameDisplay"></span></h2>
   <button onclick="location.href='addproduct.html'">Add Products</button>
@@ -62,12 +58,17 @@ header {
   </div>
 
   <script>
-    const loggedInUser = localStorage.getItem('loggedInUser');
-    if (!loggedInUser) location.href = 'login.html';
-    document.getElementById('usernameDisplay').textContent = loggedInUser;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        location.href = 'login.html';
+        return;
+      }
+      document.getElementById('usernameDisplay').textContent = user.email;
+    })();
 
-    function logout() {
-      localStorage.removeItem('loggedInUser');
+    async function logout() {
+      await supabase.auth.signOut();
       location.href = 'login.html';
     }
   </script>
