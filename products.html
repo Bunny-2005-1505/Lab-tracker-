@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Products - LabTracker</title>
+  <style>
+    body { font-family: Arial;width: 92vw;height: 100vh; margin: auto; padding: 20px;background-image: url("download.jpg");background-size: cover;backdrop-filter: blur(5px); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #bbb; padding: 8px; text-align: left; }
+    th { background-color: teal; color: white; }
+    button { background-color: #c0392b; border:none; color: white; padding: 6px 10px; border-radius: 4px; cursor: pointer; }
+    button:hover { background-color: #e74c3c; }
+    img{
+    height: 70px;
+    margin-right: 5%;
+    vertical-align: middle;
+    position: absolute;
+    right: 0%;
+    top: 0%;
+  }
+  </style>
+</head>
+<body>
+
+<h2>Products</h2>
+<img src="logo.png" alt="">
+<table>
+  <thead>
+    <tr>
+      <th>Lab</th><th>QR Code</th><th>Name</th><th>Description</th><th>Quantity</th><th>Expiry Date</th><th>Delete</th>
+    </tr>
+  </thead>
+  <tbody id="tableBody" style="color: white;"></tbody>
+</table>
+
+<button onclick="location.href='dashboard.html'">Back to Dashboard</button>
+
+<script>
+  if (!localStorage.getItem('loggedInUser')) location.href = 'login.html';
+
+  const products = JSON.parse(localStorage.getItem('products') || '[]');
+
+  const tbody = document.getElementById('tableBody');
+
+  function render() {
+    tbody.innerHTML = '';
+    products.forEach((p, i) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${p.lab}</td>
+        <td>${p.qrCode}</td>
+        <td>${p.name}</td>
+        <td>${p.description || ''}</td>
+        <td>${p.quantity}</td>
+        <td>${p.expiryDate}</td>
+        <td><button data-idx="${i}">Delete</button></td>
+      `;
+      tr.querySelector('button').addEventListener('click', () => {
+        products.splice(i, 1);
+        localStorage.setItem('products', JSON.stringify(products));
+        alert('Product deleted.');
+        render();
+      });
+      tbody.appendChild(tr);
+    });
+  }
+
+  render();
+</script>
+
+</body>
+</html>

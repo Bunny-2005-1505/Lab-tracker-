@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Add Product - LabTracker</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body { font-family: Arial;width: 100vw; margin: auto; padding: 20px;background-image: url("download\ \(1\).jpg");background-size: cover;backdrop-filter: blur(10px); }
+    label, input, textarea, select, button { width: 50%; margin: 8px 0; padding: 10px; font-size: 16px;margin-left: 25%; }
+    button { background-color: teal; color: white; border:none; cursor:pointer; border-radius: 5px; }
+    button:hover { background-color: #007770; }
+    h2{width: 100%; text-align: center;font-size:30px}
+    #reader {margin-left: 35vw; }
+    img{
+    height: 70px;
+    margin-right: 5%;
+    vertical-align: middle;
+    position: absolute;
+    right: 0%;
+    top: 5%;
+  }
+  </style>
+</head>
+<body>
+
+<h2>Add Product</h2>
+<img src="logo.png" alt="">
+<form id="addProductForm">
+  <label>Lab
+    <select id="labSelect">
+      <option value="CSE Lab">CSE Lab</option>
+      <option value="Chemistry Lab">Chemistry Lab</option>
+      <option value="Physics Lab">Physics Lab</option>
+    </select>
+  </label>
+  <label>QR Code
+    <input type="text" id="qrCode" placeholder="Scan QR or enter code" />
+  </label>
+  <label>Name
+    <input type="text" id="name" required />
+  </label>
+  <label>Description
+    <textarea id="description"></textarea>
+  </label>
+  <label>Quantity
+    <input type="number" id="quantity" min="1" required />
+  </label>
+  <label>Expiry Date
+    <input type="date" id="expiryDate" required />
+  </label>
+  <button type="submit">Add</button>
+</form>
+
+<div id="msg" style="color:red; margin-top:10px;"></div>
+
+<div id="reader" style="margin-top: 15px; max-width: 300px;"></div>
+
+<button onclick="location.href='dashboard.html'">Back to Dashboard</button>
+
+<script>
+  if (!localStorage.getItem('loggedInUser')) location.href = 'login.html';
+
+  const products = JSON.parse(localStorage.getItem('products') || '[]');
+
+  document.getElementById('addProductForm').addEventListener('submit', e => {
+    e.preventDefault();
+
+    const username = localStorage.getItem('loggedInUser');
+    const lab = document.getElementById('labSelect').value;
+    const qrCode = document.getElementById('qrCode').value.trim();
+    const name = document.getElementById('name').value.trim();
+    const description = document.getElementById('description').value.trim();
+    const quantity = parseInt(document.getElementById('quantity').value);
+    const expiryDate = document.getElementById('expiryDate').value;
+
+    if (!lab || !name || quantity <= 0 || !expiryDate) {
+      document.getElementById('msg').textContent = 'Please fill all required fields';
+      return;
+    }
+
+    products.push({ username, lab, qrCode, name, description, quantity, expiryDate });
+    localStorage.setItem('products', JSON.stringify(products));
+
+    alert('Product added successfully!');
+
+    const now = new Date();
+    const expDate = new Date(expiryDate);
+    const diffDays = Math.floor((expDate - now) / (1000 * 60 * 60 * 24));
+    if (diffDays >= 0 && diffDays <= 7) {
+      alert(`Alert: Product "${name}" in ${lab} is expiring in ${diffDays} days!`);
+    }
+    e.target.reset();
+  });
+
+  function onScanSuccess(decodedText) {
+    document.getElementById('qrCode').value = decodedText;
+  }
+
+  const scanner = new Html5QrcodeScanner('reader', { fps: 10, qrbox: 250 });
+  scanner.render(onScanSuccess);
+</script>
+
+</body>
+</html>
