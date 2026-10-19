@@ -24,7 +24,7 @@
     #loginForm .pw-toggle:hover { background: rgba(0,0,0,0.08); }
     #loginForm .pw-toggle.on { color: teal; }
 
-    /* Google button */
+    
     .divider { display: flex; align-items: center; gap: 10px; color: #444; font-size: 14px; margin: 18px 0 4px; }
     .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: #999; }
     #loginForm button.google-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; background: #fff; color: #333; border: 1px solid #bbb; margin: 12px 0 0; font-weight: bold; }
@@ -104,14 +104,22 @@
       }
     };
     document.getElementById('googleBtn').addEventListener('click', async () => {
-      const msg = document.getElementById('msg');
-      msg.textContent = 'Opening Google...';
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: location.origin + '/dashboard.html' }
-      });
-      if (error) msg.textContent = error.message;
+  const msg = document.getElementById('msg');
+  msg.textContent = 'Opening Google...';
+  try {
+    if (!supabase.auth.signInWithOAuth) {
+      msg.textContent = 'Old Supabase library: update supabaseClient.js';
+      return;
+    }
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: location.origin + '/dashboard.html' }
     });
+    if (error) msg.textContent = error.message;
+  } catch (e) {
+    msg.textContent = 'Error: ' + e.message;
+  }
+});
   </script>
   <script src="chatbot.js"></script>
 </body>
