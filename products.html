@@ -158,15 +158,20 @@ document.getElementById('editForm').addEventListener('submit', async (e) => {
   const lab = eLab.value === 'Other' ? document.getElementById('eOtherLab').value.trim() : eLab.value;
   const qty = parseInt(document.getElementById('eQty').value);
   if (!lab || !(qty > 0)) { alert('Please fill all required fields'); return; }
-  const { error } = await supabase.from('products').update({
+    const { data, error } = await supabase.from('products').update({
     lab,
     qr_code: document.getElementById('eQr').value.trim(),
     name: document.getElementById('eName').value.trim(),
     description: document.getElementById('eDesc').value.trim(),
     quantity: qty,
     expiry_date: document.getElementById('eExp').value
-  }).eq('id', editingId).eq('user_id', currentUser.id);
+  }).eq('id', editingId).eq('user_id', currentUser.id).select();
   if (error) { alert('Error updating: ' + error.message); return; }
+  if (!data || data.length === 0) {
+    alert('Nothing was saved. The update permission is missing in Supabase. Run the SQL policy, then try again.');
+    return;
+  }
+  alert('Product updated successfully!');
   closeModal();
   loadProducts();
 });
