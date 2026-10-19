@@ -19,6 +19,18 @@ button:hover{background:#007770}
 #otherLabWrap{display:none}
 #msg{color:red;text-align:center;margin-top:10px}
 
+/* QR field + scanner */
+.qr-row{display:flex;gap:8px;align-items:center}
+.qr-row input{flex:1;min-width:0}
+.scan-btn{width:auto;white-space:nowrap;padding:10px 16px}
+#scanModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;align-items:center;justify-content:center;padding:16px}
+.scan-box{background:#fff;border-radius:10px;padding:16px;width:100%;max-width:420px;max-height:95vh;overflow:auto}
+#qrReader{width:100%}
+#scanMsg{color:#c0392b;font-size:14px;min-height:18px;margin:6px 0}
+.file-label{font-weight:normal;font-size:14px}
+.cancel-btn{background:#7f8c8d}
+.cancel-btn:hover{background:#6c7a7b}
+
 /* ===== Mobile interface ===== */
 @media (max-width:700px){
   body{padding:12px}
@@ -50,7 +62,11 @@ button:hover{background:#007770}
     </label>
   </div>
 
-  <label>QR Code<input type="text" id="qrCode" placeholder="Enter code"></label>
+  <label for="qrCode">QR Code (scan or type manually)</label>
+  <div class="qr-row">
+    <input type="text" id="qrCode" placeholder="Enter code or scan">
+    <button type="button" id="scanBtn" class="scan-btn">📷 Scan</button>
+  </div>
   <label>Name<input type="text" id="name" required></label>
   <label>Description<textarea id="description"></textarea></label>
   <label>Quantity<input type="number" id="quantity" min="1" required></label>
@@ -61,6 +77,20 @@ button:hover{background:#007770}
 
 <button class="back" onclick="location.href='dashboard.html'">Back to Dashboard</button>
 
+<!-- QR scanner popup -->
+<div id="scanModal">
+  <div class="scan-box">
+    <h3 style="margin:0 0 8px">Scan QR Code</h3>
+    <div id="qrReader"></div>
+    <div id="scanMsg"></div>
+    <label class="file-label">Or pick a photo of the QR code
+      <input type="file" id="qrFile" accept="image/*">
+    </label>
+    <button type="button" id="closeScan" class="cancel-btn">Cancel</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
 let currentUser = null;
 
@@ -77,6 +107,63 @@ labSelect.addEventListener('change', () => {
   const isOther = labSelect.value === 'Other';
   otherWrap.style.display = isOther ? 'block' : 'none';
   document.getElementById('otherLab').required = isOther;
+});
+
+// ---- QR scanner ----
+const scanModal = document.getElementById('scanModal');
+const scanMsg = document.getElementById('scanMsg');
+let scanner = null;
+
+function onScanned(text) {
+  document.getElementById('qrCode').value = text.trim();
+  closeScanner();
+}
+
+async function closeScanner() {
+  scanModal.style.display = 'none';
+  if (scanner) {
+    try { if (scanner.isScanning) await scanner.stop(); } catch (e) {}
+    try { scanner.clear(); } catch (e) {}
+    scanner = null;
+  }
+}
+
+document.getElementById('scanBtn').addEventListener('click', async () => {
+  scanMsg.textContent = '';
+  scanModal.style.display = 'flex';
+  if (typeof Html5Qrcode === 'undefined') {
+    scanMsg.textContent = 'Scanner could not load. Check your internet connection, or type the code manually.';
+    return;
+  }
+  try {
+    scanner = new Html5Qrcode('qrReader');
+    await scanner.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: { width: 220, height: 220 } },
+      onScanned,
+      () => {}
+    );
+  } catch (err) {
+    scanMsg.textContent = 'Could not open the camera. Allow camera permission, use a photo below, or type the code manually.';
+  }
+});
+
+document.getElementById('closeScan').addEventListener('click', closeScanner);
+
+document.getElementById('qrFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  scanMsg.textContent = '';
+  try {
+    if (scanner && scanner.isScanning) await scanner.stop();
+    const reader = scanner || new Html5Qrcode('qrReader');
+    scanner = reader;
+    const text = await reader.scanFile(file, false);
+    onScanned(text);
+  } catch (err) {
+    scanMsg.textContent = 'No QR code found in that photo. Try a clearer one or type the code manually.';
+  }
+  e.target.value = '';
 });
 
 document.getElementById('addProductForm').addEventListener('submit', async (e) => {
