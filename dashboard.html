@@ -1,65 +1,56 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Dashboard - LabTracker</title>
-  <script src="supabaseClient.js"></script>
-  <style>
-    body { font-family: Arial; width: 100vw; height: 100vh; margin: auto; padding-top: 50px; text-align: center; background-image: url("cartoon-laboratory-room-with-flasks_23-2148899916.jpg"); background-size: cover; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-    button { width: 350px; margin: 10px 0; padding: 15px; font-size: 18px; cursor: pointer; background: #32CD32; color: white; border: none; border-radius: 5px; }
-    button:hover { background: #007770; }
-    h1 { width: 100vw; text-align: center; justify-content: center; font-size: 50px; }
-    header { position: absolute; top: 0; left: 0; background: rgba(255, 255, 255, 0.7); width: 100vw; padding: 10px 0; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); display: flex; align-items: center; justify-content: center; }
-    h2 { color: rgb(0, 0, 0); margin-bottom: 50px; font-size: 30px; }
-    .follow-us {
-      position: fixed;
-      bottom: 22px;
-      right: 22px;
-      background: rgba(255,255,255,0.8);
-      padding: 10px 18px;
-      border-radius: 8px;
-      box-shadow: 0 0 8px #b0b0b0;
-      font-size: 17px;
-      text-align: left;
-      z-index: 999;
-    }
-    .follow-us a {
-      color: #0077ff;
-      text-decoration: none;
-      font-weight: bold;
-    }
-    .follow-us a:hover {
-      text-decoration: underline;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard - LabTracker</title>
+<script src="supabaseClient.js"></script>
+<style>
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;margin:0;min-height:100vh;background:url("cartoon-laboratory-room-with-flasks_23-2148899916.jpg") center/cover fixed;display:flex;flex-direction:column;align-items:center}
+header{width:100%;background:rgba(255,255,255,.75);padding:10px 24px;box-shadow:0 2px 4px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:space-between;gap:12px}
+header h1{margin:0;font-size:32px;flex:1;text-align:center}
+header img{height:60px}
+main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;padding:20px;text-align:center}
+h2{color:#000;font-size:28px;margin:0 0 30px;word-break:break-all}
+button.nav{width:350px;max-width:100%;margin:10px 0;padding:15px;font-size:18px;cursor:pointer;background:#32CD32;color:#fff;border:none;border-radius:5px}
+button.nav:hover{background:#007770}
+.contact{background:rgba(255,255,255,.85);padding:10px 18px;border-radius:8px;box-shadow:0 0 8px #b0b0b0;font-size:16px;margin:20px 0 90px}
+.contact a{color:#0077ff;font-weight:bold;text-decoration:none}
+.contact a:hover{text-decoration:underline}
+
+/* ===== Mobile interface ===== */
+@media (max-width:700px){
+  header{flex-direction:column-reverse;padding:8px;gap:4px}
+  header h1{font-size:18px}
+  header img{height:40px}
+  main{justify-content:flex-start;padding:24px 14px}
+  h2{font-size:20px;margin-bottom:20px}
+  button.nav{width:100%;padding:18px;font-size:17px;border-radius:12px}
+  .contact{font-size:14px;width:100%;margin-bottom:90px}
+}
+</style>
 </head>
 <body>
-  <header><h1>Lab Tracker - An Inventory Management System</h1>
-    <img src="logo.png" alt="" style="height:70px; margin-right:5%;">
-  </header>
+<header>
+  <h1>Lab Tracker - An Inventory Management System</h1>
+  <img src="logo.png" alt="logo">
+</header>
+<main>
   <h2>Welcome <span id="usernameDisplay"></span></h2>
-  <button onclick="location.href='addproduct.html'">Add Products</button>
-  <button onclick="location.href='products.html'">View Products</button>
-  <button onclick="logout()">Logout</button>
-
-  <div class="follow-us">
-    Follow Us: 
-    <a href="https://facebook.com/labtracker987" target="_blank">facebook.com/labtracker987</a>
-  </div>
-
-  <script>
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        location.href = 'login.html';
-        return;
-      }
-      document.getElementById('usernameDisplay').textContent = user.email;
-    })();
-
-    async function logout() {
-      await supabase.auth.signOut();
-      location.href = 'login.html';
-    }
-  </script>
+  <button class="nav" onclick="location.href='addproduct.html'">Add Products</button>
+  <button class="nav" onclick="location.href='products.html'">View Products</button>
+  <button class="nav" onclick="logout()">Logout</button>
+  <div class="contact">Contact: <a href="mailto:hemanthkumarpinnu@gmail.com">hemanthkumarpinnu@gmail.com</a></div>
+</main>
+<script>
+(async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) { location.href = 'login.html'; return; }
+  document.getElementById('usernameDisplay').textContent = user.email;
+})();
+async function logout() { await supabase.auth.signOut(); location.href = 'login.html'; }
+</script>
+<script src="chatbot.js"></script>
 </body>
 </html>
