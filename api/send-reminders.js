@@ -27,7 +27,7 @@ module.exports = async (req, res) => {
       return res.status(500).json({ error: 'nodemailer not installed. Add package.json to the repo root.' });
     }
 
-    const base = process.env.SUPABASE_URL.replace(/\/$/, '');
+    const base = new URL(process.env.SUPABASE_URL.trim()).origin;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const headers = { apikey: key, Authorization: `Bearer ${key}` };
 
