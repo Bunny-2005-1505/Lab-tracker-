@@ -1,96 +1,183 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Products - LabTracker</title>
-  <script src="supabaseClient.js"></script>
-  <style>
-    body { font-family: Arial;width: 92vw;height: 100vh; margin: auto; padding: 20px;background-image: url("download.jpg");background-size: cover;backdrop-filter: blur(5px); }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { border: 1px solid #bbb; padding: 8px; text-align: left; }
-    th { background-color: teal; color: white; }
-    button { background-color: #c0392b; border:none; color: white; padding: 6px 10px; border-radius: 4px; cursor: pointer; }
-    button:hover { background-color: #e74c3c; }
-    img{
-    height: 70px;
-    margin-right: 5%;
-    vertical-align: middle;
-    position: absolute;
-    right: 0%;
-    top: 0%;
-  }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Products - LabTracker</title>
+<script src="supabaseClient.js"></script>
+<style>
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;margin:0;padding:20px;min-height:100vh;background:url("download.jpg") center/cover fixed}
+.logo{position:absolute;top:10px;right:5%;height:60px}
+h2{color:#fff}
+.wrap{background:rgba(0,0,0,.45);padding:10px;border-radius:8px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;color:#fff}
+th,td{border:1px solid #bbb;padding:8px;text-align:left}
+th{background:teal}
+button{border:none;color:#fff;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:14px}
+.del{background:#c0392b}.del:hover{background:#e74c3c}
+.mod{background:#2980b9}.mod:hover{background:#3498db}
+.back{background:teal;padding:10px 16px;margin-top:14px;font-size:16px}
+.actions{white-space:nowrap}
+.expired{color:#ff7675;font-weight:bold}
+
+/* Modify popup */
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:9000;padding:12px}
+#modal form{background:#fff;padding:18px;border-radius:10px;width:420px;max-width:100%;max-height:92vh;overflow-y:auto}
+#modal label{display:block;font-weight:bold;margin-top:8px;font-size:14px}
+#modal input,#modal textarea,#modal select{width:100%;padding:10px;font-size:16px;margin-top:4px;border:1px solid #bbb;border-radius:5px}
+#modal .row{display:flex;gap:10px;margin-top:14px}
+#modal .row button{flex:1;padding:11px;font-size:16px}
+.save{background:teal}.cancel{background:#7f8c8d}
+#editOtherWrap{display:none}
+
+/* ===== Mobile interface: table turns into cards ===== */
+@media (max-width:700px){
+  body{padding:12px}
+  .logo{height:40px;right:10px;top:8px}
+  h2{margin-top:44px}
+  .wrap{padding:0;background:none;overflow:visible}
+  table,thead,tbody,tr,td{display:block;width:100%}
+  thead{display:none}
+  tr{background:rgba(0,0,0,.6);border-radius:10px;margin-bottom:12px;padding:10px}
+  td{border:none;padding:5px 0;display:flex;justify-content:space-between;gap:12px;text-align:right}
+  td::before{content:attr(data-label);font-weight:bold;color:#7fe0d8;text-align:left}
+  td.actions{justify-content:flex-end;gap:8px;padding-top:8px}
+  td.actions::before{content:""}
+  td.actions button{flex:1;padding:10px}
+  .back{width:100%}
+}
+</style>
 </head>
 <body>
-
+<img class="logo" src="logo.png" alt="logo">
 <h2>Products</h2>
-<img src="logo.png" alt="">
+
+<div class="wrap">
 <table>
   <thead>
-    <tr>
-      <th>Lab</th><th>QR Code</th><th>Name</th><th>Description</th><th>Quantity</th><th>Expiry Date</th><th>Delete</th>
-    </tr>
+    <tr><th>Lab</th><th>QR Code</th><th>Name</th><th>Description</th><th>Quantity</th><th>Expiry Date</th><th>Actions</th></tr>
   </thead>
-  <tbody id="tableBody" style="color: white;"></tbody>
+  <tbody id="tableBody"></tbody>
 </table>
+</div>
 
-<button onclick="location.href='dashboard.html'">Back to Dashboard</button>
+<button class="back" onclick="location.href='dashboard.html'">Back to Dashboard</button>
+
+<!-- Modify popup -->
+<div id="modal">
+  <form id="editForm">
+    <h3 style="margin:0 0 6px">Modify Product</h3>
+    <label>Lab
+      <select id="eLab">
+        <option value="CSE Lab">CSE Lab</option>
+        <option value="Physics Lab">Physics Lab</option>
+        <option value="Chemistry Lab">Chemistry Lab</option>
+        <option value="Other">Other (type lab name)</option>
+      </select>
+    </label>
+    <div id="editOtherWrap"><label>Other Lab Name<input id="eOtherLab" type="text"></label></div>
+    <label>QR Code<input id="eQr" type="text"></label>
+    <label>Name<input id="eName" type="text" required></label>
+    <label>Description<textarea id="eDesc"></textarea></label>
+    <label>Quantity<input id="eQty" type="number" min="1" required></label>
+    <label>Expiry Date<input id="eExp" type="date" required></label>
+    <div class="row">
+      <button type="submit" class="save">Save</button>
+      <button type="button" class="cancel" id="cancelEdit">Cancel</button>
+    </div>
+  </form>
+</div>
 
 <script>
-  let currentUser = null;
-  const tbody = document.getElementById('tableBody');
+let currentUser = null, editingId = null;
+const tbody = document.getElementById('tableBody');
+const STD_LABS = ['CSE Lab', 'Physics Lab', 'Chemistry Lab'];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-  async function loadProducts() {
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .order('created_at', { ascending: false });
+async function loadProducts() {
+  const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+  if (error) { alert('Error loading products: ' + error.message); return; }
+  render(data);
+}
 
-    if (error) {
-      alert('Error loading products: ' + error.message);
-      return;
+function render(products) {
+  tbody.innerHTML = '';
+  const today = new Date(); today.setHours(0,0,0,0);
+  products.forEach((p) => {
+    const mine = currentUser && p.user_id === currentUser.id;
+    const expired = p.expiry_date && new Date(p.expiry_date) < today;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td data-label="Lab">${esc(p.lab)}</td>
+      <td data-label="QR Code">${esc(p.qr_code)}</td>
+      <td data-label="Name">${esc(p.name)}</td>
+      <td data-label="Description">${esc(p.description)}</td>
+      <td data-label="Quantity">${esc(p.quantity)}</td>
+      <td data-label="Expiry" class="${expired ? 'expired' : ''}">${esc(p.expiry_date)}${expired ? ' (expired)' : ''}</td>
+      <td class="actions">${mine ? `<button class="mod">Modify</button><button class="del">Delete</button>` : ''}</td>`;
+    if (mine) {
+      tr.querySelector('.mod').addEventListener('click', () => openEdit(p));
+      tr.querySelector('.del').addEventListener('click', async () => {
+        if (!confirm('Delete "' + p.name + '"?')) return;
+        const { error } = await supabase.from('products').delete().eq('id', p.id);
+        if (error) { alert('Error deleting: ' + error.message); return; }
+        loadProducts();
+      });
     }
-    render(data);
-  }
+    tbody.appendChild(tr);
+  });
+}
 
-  function render(products) {
-    tbody.innerHTML = '';
-    products.forEach((p) => {
-      const tr = document.createElement('tr');
-      const canDelete = currentUser && p.user_id === currentUser.id;
-      tr.innerHTML = `
-        <td>${p.lab}</td>
-        <td>${p.qr_code || ''}</td>
-        <td>${p.name}</td>
-        <td>${p.description || ''}</td>
-        <td>${p.quantity}</td>
-        <td>${p.expiry_date}</td>
-        <td>${canDelete ? `<button data-id="${p.id}">Delete</button>` : ''}</td>
-      `;
-      if (canDelete) {
-        tr.querySelector('button').addEventListener('click', async () => {
-          const { error } = await supabase.from('products').delete().eq('id', p.id);
-          if (error) {
-            alert('Error deleting: ' + error.message);
-            return;
-          }
-          alert('Product deleted.');
-          loadProducts();
-        });
-      }
-      tbody.appendChild(tr);
-    });
-  }
+// ---- Modify ----
+const eLab = document.getElementById('eLab'), otherWrap = document.getElementById('editOtherWrap');
+function toggleOther() {
+  const o = eLab.value === 'Other';
+  otherWrap.style.display = o ? 'block' : 'none';
+  document.getElementById('eOtherLab').required = o;
+}
+eLab.addEventListener('change', toggleOther);
 
-  (async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      location.href = 'login.html';
-      return;
-    }
-    currentUser = user;
-    loadProducts();
-  })();
+function openEdit(p) {
+  editingId = p.id;
+  if (STD_LABS.includes(p.lab)) { eLab.value = p.lab; document.getElementById('eOtherLab').value = ''; }
+  else { eLab.value = 'Other'; document.getElementById('eOtherLab').value = p.lab; }
+  toggleOther();
+  document.getElementById('eQr').value = p.qr_code || '';
+  document.getElementById('eName').value = p.name || '';
+  document.getElementById('eDesc').value = p.description || '';
+  document.getElementById('eQty').value = p.quantity;
+  document.getElementById('eExp').value = p.expiry_date || '';
+  document.getElementById('modal').style.display = 'flex';
+}
+const closeModal = () => { document.getElementById('modal').style.display = 'none'; editingId = null; };
+document.getElementById('cancelEdit').addEventListener('click', closeModal);
+
+document.getElementById('editForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const lab = eLab.value === 'Other' ? document.getElementById('eOtherLab').value.trim() : eLab.value;
+  const qty = parseInt(document.getElementById('eQty').value);
+  if (!lab || !(qty > 0)) { alert('Please fill all required fields'); return; }
+  const { error } = await supabase.from('products').update({
+    lab,
+    qr_code: document.getElementById('eQr').value.trim(),
+    name: document.getElementById('eName').value.trim(),
+    description: document.getElementById('eDesc').value.trim(),
+    quantity: qty,
+    expiry_date: document.getElementById('eExp').value
+  }).eq('id', editingId).eq('user_id', currentUser.id);
+  if (error) { alert('Error updating: ' + error.message); return; }
+  closeModal();
+  loadProducts();
+});
+
+(async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) { location.href = 'login.html'; return; }
+  currentUser = user;
+  loadProducts();
+})();
 </script>
-
+<script src="chatbot.js"></script>
 </body>
 </html>
