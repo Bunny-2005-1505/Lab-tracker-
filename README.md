@@ -1,1 +1,20 @@
-Laboratories often face challenges in managing their inventory due to Laboratories often face challenges inmanaging their inventory due to manual record-keeping, lackof real-time updates, and inefficient tracking methods. Thisleads to misplaced items, stock shortages, and delays in labwork. The absence of a centralized, easy-to-use inventorysystem results in wasted resources and increasedoperational costs. The project aims to solve these issues byproviding a digital, user-friendly inventory managementsolution. manual record-keeping, lack of real-time updates,and inefficient tracking methods. This leads to misplaceditems, stock shortages, and delays in lab work. The absence of a centralized, easy-to-use inventory system results inwasted resources and increased operational costs. Theproject aims to solve these issues by providing a digital,user-friendly inventory management solution.
+**Problem Statement: Laboratory Inventory Management**
+Laboratories often face significant challenges in managing their inventory due to:
+
+Manual record-keeping
+
+Lack of real-time updates
+
+Inefficient tracking methods
+
+**Impact of These Challenges**
+These issues lead to several operational bottlenecks, including:
+
+Misplaced items and stock shortages
+
+Delays in critical lab work
+
+Wasted resources and increased operational costs
+
+**Project Objective**
+To solve these issues by providing a centralized, digital, and user-friendly inventory management solution.
