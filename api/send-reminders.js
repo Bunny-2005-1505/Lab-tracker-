@@ -69,6 +69,7 @@ module.exports = async (req, res) => {
       });
       sent++;
     }
+    console.log('RESULT: checked ' + products.length + ', emails sent ' + sent);
     return res.status(200).json({ checked: products.length, emailsSent: sent });
   } catch (e) {
     console.error('REMINDER JOB CRASHED:', e && e.message, e && e.stack);
