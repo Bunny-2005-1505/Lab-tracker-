@@ -1,4 +1,3 @@
-// Fill these in from your Supabase project: Settings -> API
 const SUPABASE_URL = 'https://sqogstesfxozvnseomgn.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNxb2dzdGVzZnhvenZuc2VvbWduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3ODE3NTksImV4cCI6MjEwMDM1Nzc1OX0.RhK59ITVVaNpXSQqSJqnRulZ1_A6ejm9rRBb-uE8T-Q';
 
@@ -78,6 +77,35 @@ const supabase = {
         const data = await res.json();
         if (!res.ok) return { data: null, error: { message: data.message || 'Insert failed' } };
         return { data, error: null };
+      },
+      update(values) {
+        const filters = [];
+        const builder = {
+          eq(col, val) { filters.push(col + '=eq.' + encodeURIComponent(val)); return builder; },
+          select() { return builder; },
+          then(resolve, reject) {
+            const session = getSession();
+            if (!filters.length) {
+              resolve({ data: null, error: { message: 'Update requires a filter' } });
+              return;
+            }
+            fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + filters.join('&'), {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': 'Bearer ' + (session ? session.access_token : SUPABASE_ANON_KEY),
+                'Prefer': 'return=representation'
+              },
+              body: JSON.stringify(values)
+            }).then(async (res) => {
+              const data = await res.json().catch(() => null);
+              if (!res.ok) resolve({ data: null, error: { message: (data && data.message) || 'Update failed' } });
+              else resolve({ data, error: null });
+            }).catch((err) => resolve({ data: null, error: { message: err.message } }));
+          }
+        };
+        return builder;
       },
       delete() {
         return {
