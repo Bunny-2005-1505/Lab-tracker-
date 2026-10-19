@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Profile - LabTracker</title>
+<script src="supabaseClient.js"></script>
+<style>
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;margin:0;padding:20px;min-height:100vh;background:url("download.jpg") center/cover fixed}
+.logo{position:absolute;top:10px;right:5%;height:60px}
+h2{color:#fff;text-align:center;margin:10px 0 20px}
+.card{width:50%;margin:0 auto 18px;background:rgba(255,255,255,.92);padding:20px;border-radius:10px}
+.avatar{width:70px;height:70px;border-radius:50%;background:teal;color:#fff;font-size:32px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px}
+label{display:block;font-weight:bold;margin-top:10px}
+input,select,button{width:100%;margin:6px 0;padding:10px;font-size:16px;border:1px solid #bbb;border-radius:5px}
+input[readonly]{background:#eee}
+button{background:teal;color:#fff;border:none;cursor:pointer}
+button:hover{background:#007770}
+button.red{background:#c0392b}
+button.grey{background:#7f8c8d}
+#otherLabWrap,#mfaSetup,#mfaOn{display:none}
+.small{font-size:13px;color:#555}
+#qr{text-align:center}#qr img{width:200px;max-width:100%}
+code{word-break:break-all;background:#eee;padding:2px 4px}
+@media (max-width:700px){
+  body{padding:12px}.logo{height:40px;right:10px;top:8px}
+  h2{margin-top:44px}.card{width:100%;padding:14px}
+}
+</style>
+</head>
+<body>
+<img class="logo" src="logo.png" alt="logo">
+<h2>My Profile</h2>
+
+<div class="card">
+  <div class="avatar" id="avatar">?</div>
+  <label>Email<input id="email" readonly></label>
+  <label>Full Name<input id="fullName"></label>
+  <label>Role
+    <select id="role">
+      <option value="">Select role</option>
+      <option>Lab Teacher</option>
+      <option>Lab Assistant</option>
+      <option>Other</option>
+    </select>
+  </label>
+  <label>Lab
+    <select id="lab">
+      <option value="">Select lab</option>
+      <option>CSE Lab</option>
+      <option>Physics Lab</option>
+      <option>Chemistry Lab</option>
+      <option>Other</option>
+    </select>
+  </label>
+  <div id="otherLabWrap"><label>Other Lab Name<input id="otherLab"></label></div>
+  <label>Phone<input id="phone" type="tel"></label>
+  <label>Employee ID<input id="empId"></label>
+  <button id="saveBtn">Save Profile</button>
+  <div id="msg" class="small"></div>
+</div>
+
+<div class="card">
+  <h3 style="margin-top:0">Two-step verification (MFA)</h3>
+  <p class="small">Adds an extra code from an authenticator app (Google Authenticator, Microsoft Authenticator, Authy) when you log in.</p>
+  <div id="mfaOff"><button id="mfaStart">Enable MFA</button></div>
+  <div id="mfaSetup">
+    <p>1. Scan this QR code with your authenticator app:</p>
+    <div id="qr"></div>
+    <p class="small">Can't scan? Enter this key: <code id="secret"></code></p>
+    <p>2. Enter the 6-digit code from the app:</p>
+    <input id="mfaCode" inputmode="numeric" maxlength="6" placeholder="123456">
+    <button id="mfaVerify">Verify and turn on</button>
+    <button class="grey" id="mfaCancel">Cancel</button>
+  </div>
+  <div id="mfaOn">
+    <p>✅ MFA is <b>ON</b> for your account.</p>
+    <button class="red" id="mfaDisable">Turn off MFA</button>
+  </div>
+</div>
+
+<div class="card"><button onclick="location.href='dashboard.html'">Back to Dashboard</button></div>
+
+<script>
+let user = null, pendingFactor = null;
+const $ = id => document.getElementById(id);
+const STD = ['CSE Lab','Physics Lab','Chemistry Lab'];
+
+$('lab').addEventListener('change', () => {
+  $('otherLabWrap').style.display = $('lab').value === 'Other' ? 'block' : 'none';
+});
+
+async function loadProfile() {
+  const { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
+  $('email').value = user.email;
+  const name = data?.full_name || user.user_metadata?.full_name || '';
+  $('fullName').value = name;
+  $('avatar').textContent = (name || user.email)[0].toUpperCase();
+  if (data) {
+    $('role').value = data.role || '';
+    if (data.lab && STD.includes(data.lab)) $('lab').value = data.lab;
+    else if (data.lab) { $('lab').value = 'Other'; $('otherLab').value = data.lab; $('otherLabWrap').style.display = 'block'; }
+    $('phone').value = data.phone || '';
+    $('empId').value = data.employee_id || '';
+  }
+}
+
+$('saveBtn').addEventListener('click', async () => {
+  const lab = $('lab').value === 'Other' ? $('otherLab').value.trim() : $('lab').value;
+  const { error } = await supabase.from('profiles').upsert({
+    id: user.id,
+    full_name: $('fullName').value.trim(),
+    role: $('role').value,
+    lab,
+    phone: $('phone').value.trim(),
+    employee_id: $('empId').value.trim(),
+    updated_at: new Date().toISOString()
+  });
+  $('msg').style.color = error ? 'red' : 'green';
+  $('msg').textContent = error ? error.message : 'Profile saved ✔';
+});
+
+
+async function refreshMfa() {
+  const { data } = await supabase.auth.mfa.listFactors();
+  const verified = (data?.totp || []).find(f => f.status === 'verified');
+  $('mfaOff').style.display = verified ? 'none' : 'block';
+  $('mfaOn').style.display = verified ? 'block' : 'none';
+  $('mfaSetup').style.display = 'none';
+  return verified;
+}
+
+$('mfaStart').addEventListener('click', async () => {
+  const { data: f } = await supabase.auth.mfa.listFactors();
+  for (const x of (f?.all || [])) if (x.status === 'unverified') await supabase.auth.mfa.unenroll({ factorId: x.id });
+  const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Lab Tracker' });
+  if (error) { alert(error.message); return; }
+  pendingFactor = data.id;
+  $('qr').innerHTML = '<img src="' + data.totp.qr_code + '" alt="QR">';
+  $('secret').textContent = data.totp.secret;
+  $('mfaOff').style.display = 'none';
+  $('mfaSetup').style.display = 'block';
+});
+
+$('mfaVerify').addEventListener('click', async () => {
+  const ch = await supabase.auth.mfa.challenge({ factorId: pendingFactor });
+  if (ch.error) { alert(ch.error.message); return; }
+  const v = await supabase.auth.mfa.verify({ factorId: pendingFactor, challengeId: ch.data.id, code: $('mfaCode').value.trim() });
+  if (v.error) { alert('Wrong code: ' + v.error.message); return; }
+  $('mfaCode').value = '';
+  alert('MFA is now ON');
+  refreshMfa();
+});
+
+$('mfaCancel').addEventListener('click', async () => {
+  if (pendingFactor) await supabase.auth.mfa.unenroll({ factorId: pendingFactor });
+  pendingFactor = null; refreshMfa();
+});
+
+$('mfaDisable').addEventListener('click', async () => {
+  if (!confirm('Turn off MFA?')) return;
+  const f = await refreshMfa();
+  const { error } = await supabase.auth.mfa.unenroll({ factorId: f.id });
+  if (error) { alert(error.message); return; }
+  refreshMfa();
+});
+
+(async () => {
+  const { data: { user: u } } = await supabase.auth.getUser();
+  if (!u) { location.href = 'login.html'; return; }
+  user = u;
+  loadProfile();
+  refreshMfa();
+})();
+</script>
+<script src="mfa-guard.js"></script>
+<script src="chatbot.js"></script>
+</body>
+</html>
