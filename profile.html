@@ -137,7 +137,11 @@ $('mfaStart').addEventListener('click', async () => {
   const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Lab Tracker' });
   if (error) { alert(error.message); return; }
   pendingFactor = data.id;
-  $('qr').innerHTML = '<img src="' + data.totp.qr_code + '" alt="QR">';
+  const img = document.createElement('img');
+  img.alt = 'QR code';
+  img.src = data.totp.qr_code;
+  $('qr').innerHTML = '';
+  $('qr').appendChild(img);
   $('secret').textContent = data.totp.secret;
   $('mfaOff').style.display = 'none';
   $('mfaSetup').style.display = 'block';
