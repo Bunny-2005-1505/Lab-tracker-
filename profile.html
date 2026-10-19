@@ -11,7 +11,11 @@ body{font-family:Arial,sans-serif;margin:0;padding:20px;min-height:100vh;backgro
 .logo{position:absolute;top:10px;right:5%;height:60px}
 h2{color:#fff;text-align:center;margin:10px 0 20px}
 .card{width:50%;margin:0 auto 18px;background:rgba(255,255,255,.92);padding:20px;border-radius:10px}
-.avatar{width:70px;height:70px;border-radius:50%;background:teal;color:#fff;font-size:32px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px}
+.avatar-box{text-align:center;margin-bottom:6px}
+#avatar{width:110px;height:110px;border-radius:50%;background:teal;color:#fff;font-size:46px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;overflow:hidden}
+#avatar img{width:100%;height:100%;object-fit:cover}
+.photo-btns{display:flex;gap:8px;justify-content:center}
+.photo-btns button{width:auto;padding:8px 14px;font-size:14px;margin:0}
 label{display:block;font-weight:bold;margin-top:10px}
 input,select,button{width:100%;margin:6px 0;padding:10px;font-size:16px;border:1px solid #bbb;border-radius:5px}
 input[readonly]{background:#eee}
@@ -34,7 +38,16 @@ code{word-break:break-all;background:#eee;padding:2px 4px}
 <h2>My Profile</h2>
 
 <div class="card">
-  <div class="avatar" id="avatar">?</div>
+  <div class="avatar-box">
+    <div id="avatar">?</div>
+    <input type="file" id="photoInput" accept="image/png,image/jpeg,image/webp" style="display:none">
+    <div class="photo-btns">
+      <button type="button" id="photoBtn">Change photo</button>
+      <button type="button" class="red" id="photoRemove" style="display:none">Remove</button>
+    </div>
+    <div id="photoMsg" class="small"></div>
+  </div>
+
   <label>Email<input id="email" readonly></label>
   <label>Full Name<input id="fullName"></label>
   <label>Role
@@ -83,7 +96,7 @@ code{word-break:break-all;background:#eee;padding:2px 4px}
 <div class="card"><button onclick="location.href='dashboard.html'">Back to Dashboard</button></div>
 
 <script>
-let user = null, pendingFactor = null;
+let user = null, pendingFactor = null, avatarUrl = null;
 const $ = id => document.getElementById(id);
 const STD = ['CSE Lab','Physics Lab','Chemistry Lab'];
 
@@ -91,12 +104,93 @@ $('lab').addEventListener('change', () => {
   $('otherLabWrap').style.display = $('lab').value === 'Other' ? 'block' : 'none';
 });
 
+
+function showAvatar() {
+  const box = $('avatar');
+  box.innerHTML = '';
+  if (avatarUrl) {
+    const img = document.createElement('img');
+    img.alt = 'Profile photo';
+    img.src = avatarUrl;
+    box.appendChild(img);
+    $('photoRemove').style.display = 'inline-block';
+  } else {
+    const name = $('fullName').value.trim() || user.email;
+    box.textContent = name[0].toUpperCase();
+    $('photoRemove').style.display = 'none';
+  }
+}
+
+
+function resizeImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Could not read the file'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('This file is not a valid image'));
+      img.onload = () => {
+        const size = Math.min(img.width, img.height);
+        const sx = (img.width - size) / 2, sy = (img.height - size) / 2;
+        const c = document.createElement('canvas');
+        c.width = c.height = 400;
+        c.getContext('2d').drawImage(img, sx, sy, size, size, 0, 0, 400, 400);
+        c.toBlob(b => b ? resolve(b) : reject(new Error('Could not process image')), 'image/jpeg', 0.85);
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+$('photoBtn').addEventListener('click', () => $('photoInput').click());
+
+$('photoInput').addEventListener('change', async () => {
+  const file = $('photoInput').files[0];
+  if (!file) return;
+  const msg = $('photoMsg');
+  msg.style.color = '#555';
+  if (!/^image\/(png|jpeg|webp)$/.test(file.type)) { msg.style.color = 'red'; msg.textContent = 'Please choose a PNG, JPG or WebP image.'; return; }
+  if (file.size > 10 * 1024 * 1024) { msg.style.color = 'red'; msg.textContent = 'Image is too large (max 10 MB).'; return; }
+  msg.textContent = 'Uploading...';
+  try {
+    const blob = await resizeImage(file);
+    const path = user.id + '/avatar.jpg';
+    const up = await supabase.storage.from('avatars').upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
+    if (up.error) throw up.error;
+    const pub = supabase.storage.from('avatars').getPublicUrl(path);
+    const url = pub.data.publicUrl + '?t=' + Date.now();
+    const sv = await supabase.from('profiles').upsert({ id: user.id, avatar_url: url, updated_at: new Date().toISOString() });
+    if (sv.error) throw sv.error;
+    avatarUrl = url;
+    showAvatar();
+    msg.style.color = 'green';
+    msg.textContent = 'Photo updated ✔';
+  } catch (e) {
+    msg.style.color = 'red';
+    msg.textContent = 'Upload failed: ' + (e.message || e);
+  }
+  $('photoInput').value = '';
+});
+
+$('photoRemove').addEventListener('click', async () => {
+  if (!confirm('Remove your profile photo?')) return;
+  const msg = $('photoMsg');
+  await supabase.storage.from('avatars').remove([user.id + '/avatar.jpg']);
+  const sv = await supabase.from('profiles').upsert({ id: user.id, avatar_url: null, updated_at: new Date().toISOString() });
+  if (sv.error) { msg.style.color = 'red'; msg.textContent = sv.error.message; return; }
+  avatarUrl = null;
+  showAvatar();
+  msg.style.color = 'green';
+  msg.textContent = 'Photo removed';
+});
+
+
 async function loadProfile() {
   const { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
   $('email').value = user.email;
-  const name = data?.full_name || user.user_metadata?.full_name || '';
-  $('fullName').value = name;
-  $('avatar').textContent = (name || user.email)[0].toUpperCase();
+  $('fullName').value = (data && data.full_name) || (user.user_metadata && user.user_metadata.full_name) || '';
+  avatarUrl = (data && data.avatar_url) || (user.user_metadata && (user.user_metadata.avatar_url || user.user_metadata.picture)) || null;
   if (data) {
     $('role').value = data.role || '';
     if (data.lab && STD.includes(data.lab)) $('lab').value = data.lab;
@@ -104,6 +198,7 @@ async function loadProfile() {
     $('phone').value = data.phone || '';
     $('empId').value = data.employee_id || '';
   }
+  showAvatar();
 }
 
 $('saveBtn').addEventListener('click', async () => {
@@ -124,7 +219,7 @@ $('saveBtn').addEventListener('click', async () => {
 
 async function refreshMfa() {
   const { data } = await supabase.auth.mfa.listFactors();
-  const verified = (data?.totp || []).find(f => f.status === 'verified');
+  const verified = (data && data.totp || []).find(f => f.status === 'verified');
   $('mfaOff').style.display = verified ? 'none' : 'block';
   $('mfaOn').style.display = verified ? 'block' : 'none';
   $('mfaSetup').style.display = 'none';
@@ -133,8 +228,8 @@ async function refreshMfa() {
 
 $('mfaStart').addEventListener('click', async () => {
   const { data: f } = await supabase.auth.mfa.listFactors();
-  for (const x of (f?.all || [])) if (x.status === 'unverified') await supabase.auth.mfa.unenroll({ factorId: x.id });
-  const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Lab Tracker' });
+  for (const x of ((f && f.all) || [])) if (x.status === 'unverified') await supabase.auth.mfa.unenroll({ factorId: x.id });
+  const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Lab Tracker ' + Date.now() });
   if (error) { alert(error.message); return; }
   pendingFactor = data.id;
   const img = document.createElement('img');
