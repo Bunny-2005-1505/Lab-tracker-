@@ -100,7 +100,10 @@ code{word-break:break-all;background:#eee;padding:2px 4px}
   </div>
 </div>
 
-<div class="card"><button onclick="location.href='dashboard.html'">Back to Dashboard</button></div>
+<div class="card">
+  <button onclick="location.href='dashboard.html'">Back to Dashboard</button>
+  <button class="red" id="logoutBtn">Log out</button>
+</div>
 
 <div id="camModal">
   <div class="camBox">
@@ -319,6 +322,11 @@ $('mfaDisable').addEventListener('click', async () => {
   const { error } = await supabase.auth.mfa.unenroll({ factorId: f.id });
   if (error) { alert(error.message); return; }
   refreshMfa();
+});
+
+$('logoutBtn').addEventListener('click', async () => {
+  await supabase.auth.signOut();
+  location.href = 'login.html';
 });
 
 (async () => {
