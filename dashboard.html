@@ -4,115 +4,230 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dashboard - LabTracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="supabaseClient.js"></script>
 <style>
 *{box-sizing:border-box}
-:root{--teal:#008080;--teal-dark:#006666;--ink:#1d2b2b;--muted:#5b6b6b}
-body{font-family:Arial,sans-serif;margin:0;min-height:100vh;color:var(--ink);background:linear-gradient(rgba(255,255,255,.62),rgba(255,255,255,.62)),url("cartoon-laboratory-room-with-flasks_23-2148899916.jpg") center/cover fixed}
-header{background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.12);position:sticky;top:0;z-index:5}
-.bar{max-width:760px;margin:0 auto;padding:8px 14px;display:flex;align-items:center;gap:12px}
-.bar img{height:44px}
-.bar h1{margin:0;font-size:17px;flex:1;line-height:1.25}
-.bar h1 small{display:block;font-weight:normal;color:var(--muted);font-size:12px}
-.profile{background:#fff;color:var(--teal);font-weight:bold;text-decoration:none;padding:8px 14px;border-radius:20px;border:1px solid var(--teal);white-space:nowrap;font-size:14px}
-.profile:hover{background:#e6fffd}
-main{max-width:760px;margin:0 auto;padding:18px 14px 100px}
-.welcome{margin:6px 0 14px}
-.welcome h2{margin:0;font-size:24px;overflow-wrap:anywhere}
-.welcome .mail{color:var(--muted);font-size:13px;margin-top:2px;overflow-wrap:anywhere}
-#orgLine{display:inline-block;margin:8px 0 0;padding:6px 12px;background:#e3f4f3;color:var(--teal-dark);border:1px solid #b6dcda;border-radius:18px;font-size:14px;font-weight:bold}
+:root{
+  --bg:#F2F5F6;--surface:#fff;--ink:#12262B;--muted:#5A6F75;--line:#D9E2E5;
+  --teal:#0A6C6A;--teal-deep:#064F4D;--amber:#B7791F;--amber-edge:#E3A008;--red:#B42318;--ok:#2F7D5B;
+}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.5 "Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;min-height:100vh}
+a{color:inherit}
+a:focus-visible,button:focus-visible{outline:3px solid #7fc7c4;outline-offset:2px}
+.top{background:var(--surface);border-bottom:1px solid var(--line)}
+.top-in{max-width:720px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-weight:700;font-size:17px;letter-spacing:-.01em}
+.brand img{height:38px;width:auto}
+.profile-link{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:6px;text-decoration:none;font-weight:600;font-size:14px;color:var(--teal-deep);background:var(--surface)}
+.profile-link:hover{border-color:var(--teal);background:#f1f9f9}
+.wrap{max-width:720px;margin:0 auto;padding:22px 16px 110px}
+.who h1{margin:0;font-size:24px;line-height:1.2;font-weight:700;letter-spacing:-.015em;overflow-wrap:anywhere}
+.who .mail{margin:4px 0 0;color:var(--muted);font-size:13.5px;overflow-wrap:anywhere}
+#orgLine{margin:6px 0 0;font-size:14.5px;font-weight:600;color:var(--teal-deep)}
 #orgLine:empty{display:none}
-#orgLine a{color:var(--teal-dark);text-decoration:underline}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}
-.stat{background:#fff;border-radius:12px;padding:12px 8px;text-align:center;box-shadow:0 1px 5px rgba(0,0,0,.12);text-decoration:none;color:inherit;border-top:4px solid var(--teal)}
-.stat b{display:block;font-size:28px;line-height:1.1}
-.stat span{font-size:12.5px;color:var(--muted)}
-.stat.warn{border-top-color:#e0a100}.stat.bad{border-top-color:#c0392b}
-.stat.warn b{color:#a87500}.stat.bad b{color:#c0392b}
-.actions{display:grid;gap:10px;margin:8px 0 18px}
-.btn{display:block;width:100%;padding:16px;font-size:17px;border-radius:12px;cursor:pointer;text-align:center;text-decoration:none;font-weight:bold;border:2px solid var(--teal)}
-.btn.primary{background:var(--teal);color:#fff}
-.btn.primary:hover{background:var(--teal-dark)}
-.btn.outline{background:#fff;color:var(--teal)}
-.btn.outline:hover{background:#e6fffd}
-.card{background:rgba(255,255,255,.95);border-radius:12px;padding:14px 16px;margin-bottom:14px;box-shadow:0 1px 5px rgba(0,0,0,.12)}
-.card summary{font-weight:bold;font-size:16px;cursor:pointer}
-.card ul{margin:10px 0 0;padding-left:20px;line-height:1.5;font-size:14.5px}
-.card p{margin:8px 0 0;font-size:14.5px;line-height:1.5}
-.contact a{color:#0a63c9;font-weight:bold;text-decoration:none}
-#adminLink{display:none;margin-top:10px}
-@media (min-width:700px){.bar h1{font-size:20px}.actions{grid-template-columns:1fr 1fr}.welcome h2{font-size:28px}}
+#orgLine a{color:var(--teal);font-weight:500;text-underline-offset:2px}
+.totals{display:grid;grid-template-columns:repeat(3,1fr);margin:20px 0 14px;background:var(--surface);border:1px solid var(--line);border-radius:6px}
+.totals a{display:block;padding:12px 14px;text-decoration:none;min-height:44px}
+.totals a+a{border-left:1px solid var(--line)}
+.totals a:hover{background:#f7fafa}
+.totals b{display:block;font-size:26px;line-height:1.15;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.totals span{display:block;font-size:12.5px;line-height:1.3;color:var(--muted);margin-top:2px}
+.totals .soon.has b{color:var(--amber)}
+.totals .gone.has b{color:var(--red)}
+.actions{display:grid;gap:8px;margin-bottom:26px}
+.btn-primary{display:flex;align-items:center;justify-content:center;gap:8px;min-height:50px;border-radius:6px;background:var(--teal);color:#fff;text-decoration:none;font-weight:600;font-size:16px}
+.btn-primary:hover{background:var(--teal-deep)}
+.btn-row{display:flex;align-items:center;justify-content:space-between;min-height:48px;padding:0 14px;border:1px solid var(--line);border-radius:6px;background:var(--surface);text-decoration:none;font-weight:600;font-size:15px}
+.btn-row:hover{border-color:var(--teal)}
+h2{margin:0;font-size:17px;line-height:1.3;font-weight:700;letter-spacing:-.01em}
+.attn .sub{margin:2px 0 10px;color:var(--muted);font-size:13.5px}
+.list{list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:6px}
+.list li{display:flex;justify-content:space-between;gap:12px;padding:12px 14px 12px 12px;border-left:4px solid var(--edge,var(--line))}
+.list li+li{border-top:1px solid var(--line)}
+.list .nm{font-weight:600;overflow-wrap:anywhere}
+.list .mt{font-size:13px;color:var(--muted)}
+.list .st{text-align:right;flex:none;font-size:13.5px;font-weight:600;color:var(--tone,var(--ink))}
+.list .st small{display:block;font-weight:400;color:var(--muted);font-size:12.5px}
+.list li.expired{--edge:var(--red);--tone:var(--red)}
+.list li.soon{--edge:var(--amber-edge);--tone:var(--amber)}
+.list .none{display:block;border-left-color:var(--ok);padding:14px;color:var(--muted)}
+.list .none b{color:var(--ink)}
+.more{display:inline-block;margin-top:10px;font-weight:600;color:var(--teal);font-size:14.5px;text-underline-offset:3px}
+.about{margin-top:34px;padding-top:22px;border-top:1px solid var(--line)}
+.about p{margin:6px 0 0;max-width:62ch}
+.about dl{margin:14px 0 0;display:grid;gap:12px}
+.about dt{font-weight:600;font-size:14.5px}
+.about dd{margin:1px 0 0;color:var(--muted);font-size:14.5px;max-width:62ch}
+.contact{margin-top:28px;padding-top:18px;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.contact a{color:var(--teal-deep);font-weight:600;text-underline-offset:2px}
+#adminLink{display:none;margin-top:10px;font-weight:600;color:var(--teal)}
+@media (min-width:760px){
+  .wrap{padding-top:34px}
+  .who h1{font-size:30px}
+  .about dl{grid-template-columns:1fr 1fr;gap:16px 28px}
+}
 </style>
 </head>
 <body>
-<header>
-  <div class="bar">
-    <img src="logo.png" alt="LabTracker logo">
-    <h1>Lab Tracker<small>An Inventory Management System</small></h1>
-    <a class="profile" href="profile.html">👤 Profile</a>
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="dashboard.html"><img src="logo.png" alt=""><span>Lab Tracker</span></a>
+    <a class="profile-link" href="profile.html">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7"/></svg>
+      Profile
+    </a>
   </div>
 </header>
 
-<main>
-  <div class="welcome">
-    <h2>Welcome, <span id="usernameDisplay"></span></h2>
-    <div class="mail" id="emailDisplay"></div>
-    <div id="orgLine"></div>
-  </div>
+<main class="wrap">
+  <section class="who">
+    <h1 id="usernameDisplay">&nbsp;</h1>
+    <p class="mail" id="emailDisplay"></p>
+    <p id="orgLine"></p>
+  </section>
 
-  <div class="stats">
-    <a class="stat" href="products.html"><b id="stTotal">-</b><span>Products</span></a>
-    <a class="stat warn" href="products.html"><b id="stSoon">-</b><span>Expiring in 7 days</span></a>
-    <a class="stat bad" href="products.html"><b id="stExpired">-</b><span>Expired</span></a>
-  </div>
+  <section class="totals" aria-label="Inventory summary">
+    <a href="products.html"><b id="stTotal">-</b><span>Products</span></a>
+    <a href="products.html" class="soon" id="soonBox"><b id="stSoon">-</b><span>Expiring soon</span></a>
+    <a href="products.html" class="gone" id="goneBox"><b id="stExpired">-</b><span>Expired</span></a>
+  </section>
 
   <div class="actions">
-    <a class="btn primary" href="addproduct.html">➕ Add Products</a>
-    <a class="btn outline" href="products.html">📦 View Products</a>
+    <a class="btn-primary" href="addproduct.html">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      Add product
+    </a>
+    <a class="btn-row" href="products.html">View all products
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </a>
   </div>
 
-  <details class="card" open>
-    <summary>ℹ️ About Lab Tracker</summary>
-    <p>Lab Tracker is a simple digital inventory for school and college labs. It replaces paper registers so nothing gets lost, runs out, or expires unnoticed.</p>
-    <ul>
-      <li><b>Track</b> chemicals and equipment by lab, quantity and expiry date.</li>
-      <li><b>Scan</b> a QR code when adding a product, or type the code yourself.</li>
-      <li><b>Get reminders</b> by email 5 days and 1 day before something expires.</li>
-      <li><b>Lab Assistants</b> manage the products they add. <b>Verified Teachers</b> can see all products in their college.</li>
-      <li><b>Teachers</b> are verified with their college email and a photo of their ID card. The ID is checked by AI, reviewed by the administrator if anything looks wrong, never shown to other users, and deleted once the decision is made.</li>
-    </ul>
-  </details>
+  <section class="attn">
+    <h2>Needs attention</h2>
+    <p class="sub" id="attnSub">Loading your products</p>
+    <ul class="list" id="attnList" hidden></ul>
+    <a class="more" id="attnMore" href="products.html" hidden>See all products</a>
+  </section>
 
-  <div class="card contact">
-    <b>Contact</b>
-    <p>📧 <a href="mailto:hemanthkumarpinnu@gmail.com">hemanthkumarpinnu@gmail.com</a><br>📞 <a href="tel:+919177843853">+91 9177843853</a></p>
-    <a class="btn outline" id="adminLink" href="admin.html">🛡️ Review teacher requests</a>
-  </div>
+  <section class="about">
+    <h2>About Lab Tracker</h2>
+    <p>Lab Tracker keeps a lab's chemicals and equipment in one list, with quantities and expiry dates, so stock is easy to check and nothing expires unnoticed.</p>
+    <dl>
+      <div><dt>Adding products</dt><dd>Type a product's code, or scan its QR code with your phone camera.</dd></div>
+      <div><dt>Expiry reminders</dt><dd>You get an email 5 days and 1 day before a product expires.</dd></div>
+      <div><dt>Lab assistants</dt><dd>See and manage the products they add themselves.</dd></div>
+      <div><dt>Teachers</dt><dd>See every product in their college. Teachers are verified with their college email and a photo of their ID card, which is deleted once the decision is made.</dd></div>
+    </dl>
+  </section>
+
+  <section class="contact">
+    Questions or problems? <a href="mailto:hemanthkumarpinnu@gmail.com">hemanthkumarpinnu@gmail.com</a> or <a href="tel:+919177843853">+91 9177843853</a>
+    <br><a id="adminLink" href="admin.html">Review teacher requests</a>
+  </section>
 </main>
 
 <script>
 const cap = (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
 const isoDay = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+const dayNum = (iso) => Math.round(Date.parse(iso + 'T00:00:00Z') / 86400000);
+const fmtDate = (iso) => new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+const plural = (n, w) => n + ' ' + w + (n === 1 ? '' : 's');
+const $ = (id) => document.getElementById(id);
+
+function statusFor(p, todayN) {
+  const left = dayNum(p.expiry_date) - todayN;
+  if (left < 0) return { kind: 'expired', text: 'Expired ' + plural(-left, 'day') + ' ago', left };
+  if (left === 0) return { kind: 'soon', text: 'Expires today', left };
+  if (left === 1) return { kind: 'soon', text: 'Expires tomorrow', left };
+  return { kind: 'soon', text: 'Expires in ' + left + ' days', left };
+}
+
+function renderAttention(items) {
+  const todayN = dayNum(isoDay(new Date()));
+  const flagged = items
+    .filter(p => p.expiry_date)
+    .map(p => ({ p, s: statusFor(p, todayN) }))
+    .filter(x => x.s.left <= 7)
+    .sort((a, b) => a.s.left - b.s.left);
+
+  const list = $('attnList');
+  list.innerHTML = '';
+  list.hidden = false;
+
+  if (!items.length) {
+    $('attnSub').textContent = 'Nothing to track yet.';
+    const li = document.createElement('li');
+    li.className = 'none';
+    const b = document.createElement('b');
+    b.textContent = 'No products yet. ';
+    li.append(b, 'Add your first product to start tracking quantities and expiry dates.');
+    list.append(li);
+    return;
+  }
+
+  if (!flagged.length) {
+    $('attnSub').textContent = 'Expired products and those expiring within 7 days appear here.';
+    const li = document.createElement('li');
+    li.className = 'none';
+    const b = document.createElement('b');
+    b.textContent = 'All clear. ';
+    li.append(b, 'Nothing has expired and nothing expires this week.');
+    list.append(li);
+    return;
+  }
+
+  $('attnSub').textContent = 'Expired, or expiring within 7 days. Earliest first.';
+  flagged.slice(0, 8).forEach(({ p, s }) => {
+    const li = document.createElement('li');
+    li.className = s.kind;
+    const left = document.createElement('div');
+    const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = p.name || 'Unnamed product';
+    const mt = document.createElement('div'); mt.className = 'mt';
+    mt.textContent = [p.lab, p.quantity != null ? 'Quantity ' + p.quantity : ''].filter(Boolean).join(', ');
+    left.append(nm, mt);
+    const right = document.createElement('div'); right.className = 'st';
+    right.textContent = s.text;
+    const d = document.createElement('small'); d.textContent = fmtDate(p.expiry_date);
+    right.append(d);
+    li.append(left, right);
+    list.append(li);
+  });
+  if (flagged.length > 8) {
+    $('attnMore').hidden = false;
+    $('attnMore').textContent = 'See all ' + flagged.length + ' in View all products';
+  }
+}
 
 (async () => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) { location.href = 'login.html'; return; }
 
-  document.getElementById('emailDisplay').textContent = user.email;
+  $('emailDisplay').textContent = user.email;
   const prof = await supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle();
   let name = (prof.data && prof.data.full_name) || (user.user_metadata && user.user_metadata.full_name) || '';
   name = name.split(/\s+/).filter(w => w && !/\d/.test(w)).map(cap).join(' ');
   if (!name) name = cap((user.email.split('@')[0].split(/[._\d]/)[0]) || 'there');
-  document.getElementById('usernameDisplay').textContent = name;
+  $('usernameDisplay').textContent = name;
 
-  const res = await supabase.from('products').select('expiry_date');
-  if (!res.error && res.data) {
-    const today = isoDay(new Date());
-    const soon = isoDay(new Date(Date.now() + 7 * 86400000));
+  const res = await supabase.from('products').select('name,lab,quantity,expiry_date');
+  if (res.error || !res.data) {
+    $('attnSub').textContent = 'Could not load your products. Refresh the page to try again.';
+  } else {
     const items = res.data;
-    document.getElementById('stTotal').textContent = items.length;
-    document.getElementById('stExpired').textContent = items.filter(p => p.expiry_date && p.expiry_date < today).length;
-    document.getElementById('stSoon').textContent = items.filter(p => p.expiry_date && p.expiry_date >= today && p.expiry_date <= soon).length;
+    const todayN = dayNum(isoDay(new Date()));
+    const dated = items.filter(p => p.expiry_date).map(p => dayNum(p.expiry_date) - todayN);
+    const soon = dated.filter(n => n >= 0 && n <= 7).length;
+    const gone = dated.filter(n => n < 0).length;
+    $('stTotal').textContent = items.length;
+    $('stSoon').textContent = soon;
+    $('stExpired').textContent = gone;
+    if (soon) $('soonBox').classList.add('has');
+    if (gone) $('goneBox').classList.add('has');
+    renderAttention(items);
   }
 
   try {
@@ -122,7 +237,7 @@ const isoDay = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toIS
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
       body: JSON.stringify({ action: 'whoami' })
     });
-    if (r.ok) document.getElementById('adminLink').style.display = 'block';
+    if (r.ok) $('adminLink').style.display = 'inline-block';
   } catch (e) {}
 })();
 </script>
