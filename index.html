@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="logo.png">
 <meta name="theme-color" content="#008080">
 
-
+<meta name="google-site-verification" content="nra6Z1gKShv-_kWG2kYLvz4Hlcu9A1XzC1PoQL_IngA" />
 
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Lab Tracker">
@@ -140,11 +140,13 @@ footer a{color:#9fe}
       if (/^sb-.*-auth-token$/.test(k)) { logged = true; break; }
     }
     if (logged) {
-      document.getElementById('loginBtn').textContent = 'Dashboard';
-      document.getElementById('loginBtn').href = 'dashboard.html';
+      var lb = document.getElementById('loginBtn');
+      var hb = document.getElementById('heroBtn');
+      lb.textContent = 'Dashboard';
+      lb.href = 'dashboard.html';
       document.getElementById('regBtn').style.display = 'none';
-      document.getElementById('heroBtn').textContent = 'Go to Dashboard';
-      document.getElementById('heroBtn').href = 'dashboard.html';
+      hb.textContent = 'Go to Dashboard';
+      hb.href = 'dashboard.html';
     }
   } catch (e) {}
 })();
