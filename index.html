@@ -1,10 +1,153 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>LabTracker</title>
-  <meta http-equiv="refresh" content="0; url=login.html" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lab Tracker: Lab Inventory Management System for Colleges and Labs</title>
+<meta name="description" content="Lab Tracker is a free web app to track lab chemicals, instruments and consumables, get expiry reminder emails, and manage CSE, Physics and Chemistry lab stock.">
+<link rel="canonical" href="https://lab-tracker.vercel.app/">
+<meta name="robots" content="index, follow">
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="apple-touch-icon" href="logo.png">
+<meta name="theme-color" content="#008080">
+
+
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Lab Tracker">
+<meta property="og:title" content="Lab Tracker: Lab Inventory Management System">
+<meta property="og:description" content="Track lab chemicals, instruments and consumables. Expiry reminders by email, teacher verification and secure login.">
+<meta property="og:url" content="https://lab-tracker.vercel.app/">
+<meta property="og:image" content="https://lab-tracker.vercel.app/logo.png">
+<meta name="twitter:card" content="summary">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Lab Tracker",
+  "url": "https://lab-tracker.vercel.app/",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Any (web browser)",
+  "description": "Web-based inventory management system for laboratories to track chemicals, instruments and consumables with expiry reminders.",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "INR" },
+  "author": { "@type": "Person", "name": "Hemanth Kumar Pinnu" }
+}
+</script>
+
+<style>
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#1d2b2b;background:#f4f8f8;line-height:1.55}
+header.top{background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.08);position:sticky;top:0;z-index:10}
+.bar{max-width:1050px;margin:0 auto;padding:10px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:bold;font-size:20px;color:#007770;text-decoration:none}
+.brand img{height:46px}
+nav a.btn{margin-left:8px}
+.btn{display:inline-block;padding:10px 20px;border-radius:24px;text-decoration:none;font-weight:bold;font-size:15px;border:2px solid teal;color:teal;background:#fff}
+.btn.fill{background:teal;color:#fff}
+.btn:hover{opacity:.88}
+.hero{background:linear-gradient(135deg,#00796b,#26a69a);color:#fff;text-align:center;padding:64px 18px}
+.hero h1{margin:0 0 12px;font-size:38px;line-height:1.2}
+.hero p{max-width:680px;margin:0 auto 24px;font-size:18px}
+.hero .btn{border-color:#fff}
+.hero .btn.fill{background:#fff;color:#007770}
+.hero .btn:not(.fill){background:transparent;color:#fff}
+section{max-width:1050px;margin:0 auto;padding:44px 18px}
+h2{font-size:28px;margin:0 0 18px;color:#005f58;text-align:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.card{background:#fff;border-radius:10px;padding:18px;box-shadow:0 1px 5px rgba(0,0,0,.08)}
+.card h3{margin:0 0 6px;font-size:18px;color:#007770}
+.card p{margin:0;font-size:15px}
+.steps{counter-reset:s;list-style:none;padding:0;max-width:700px;margin:0 auto}
+.steps li{counter-increment:s;background:#fff;border-radius:10px;padding:14px 14px 14px 56px;margin-bottom:10px;position:relative;box-shadow:0 1px 5px rgba(0,0,0,.08)}
+.steps li::before{content:counter(s);position:absolute;left:14px;top:12px;width:30px;height:30px;border-radius:50%;background:teal;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center}
+details{background:#fff;border-radius:10px;padding:12px 16px;margin-bottom:10px;box-shadow:0 1px 5px rgba(0,0,0,.08)}
+summary{cursor:pointer;font-weight:bold}
+details p{margin:8px 0 0}
+footer{background:#0b3d3a;color:#cfe;text-align:center;padding:26px 18px;font-size:14px}
+footer a{color:#9fe}
+@media (max-width:700px){
+  .hero{padding:44px 16px}.hero h1{font-size:28px}.hero p{font-size:16px}
+  .brand span{display:none}.btn{padding:9px 14px;font-size:14px}h2{font-size:24px}
+}
+</style>
 </head>
 <body>
-  <p>Redirecting to <a href="login.html">login</a>...</p>
+
+<header class="top">
+  <div class="bar">
+    <a class="brand" href="/"><img src="logo.png" alt="Lab Tracker logo"><span>Lab Tracker</span></a>
+    <nav>
+      <a class="btn" id="loginBtn" href="login.html">Login</a>
+      <a class="btn fill" id="regBtn" href="register.html">Register</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <h1>Lab Inventory Management System</h1>
+    <p>Track chemicals, instruments and consumables across your college or company labs. Get expiry reminders by email, and keep every lab's stock in one secure place.</p>
+    <a class="btn fill" id="heroBtn" href="register.html">Get started free</a>
+    <a class="btn" href="#features">See features</a>
+  </div>
+
+  <section id="features">
+    <h2>What Lab Tracker does</h2>
+    <div class="grid">
+      <div class="card"><h3>Track lab stock</h3><p>Add products with name, quantity, description, QR code and expiry date. Edit or delete them anytime.</p></div>
+      <div class="card"><h3>Many labs</h3><p>Organize items by CSE Lab, Physics Lab, Chemistry Lab, or add your own lab name.</p></div>
+      <div class="card"><h3>Expiry reminder emails</h3><p>Automatic email reminders 5 days and 1 day before a product expires, so nothing is wasted.</p></div>
+      <div class="card"><h3>Organization access</h3><p>Staff join with their college or company email. Verified lab teachers see their organization's products, and assistants see their own.</p></div>
+      <div class="card"><h3>Secure login</h3><p>Sign in with email or Google, and turn on two-step verification (MFA) for extra protection.</p></div>
+      <div class="card"><h3>Works on phone and laptop</h3><p>A layout made for small screens and large screens, plus a built-in chat assistant for help.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li><b>Register</b> with your college or company email and confirm it.</li>
+      <li><b>Add your lab products</b> with quantity and expiry date.</li>
+      <li><b>Get reminders</b> by email before items expire.</li>
+      <li><b>Lab teachers</b> verify their role to view all products in their organization.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Frequently asked questions</h2>
+    <details><summary>What is Lab Tracker?</summary><p>Lab Tracker is a web-based inventory management system for laboratories. It helps labs keep track of chemicals, instruments and consumables and avoid using expired items.</p></details>
+    <details><summary>Is Lab Tracker free?</summary><p>Yes, you can register and use it for free.</p></details>
+    <details><summary>Who can see my products?</summary><p>Lab assistants see only their own products. Verified lab teachers can also see the products of people from the same organization. Different organizations cannot see each other's data.</p></details>
+    <details><summary>How do I become a lab teacher?</summary><p>Log in with your official college or company email, open the dashboard and choose Verify as Lab Teacher. You will be asked for your designation and a photo of your staff ID card.</p></details>
+    <details><summary>How do expiry reminders work?</summary><p>Every morning the system checks for products expiring in 5 days or 1 day and emails the person who added them.</p></details>
+  </section>
+</main>
+
+<footer>
+  <p><b>Lab Tracker</b> · Built by Hemanth Kumar Pinnu</p>
+  <p>Contact: <a href="mailto:hemanthkumarpinnu@gmail.com">hemanthkumarpinnu@gmail.com</a></p>
+  <p>© 2026 Lab Tracker. All rights reserved.</p>
+</footer>
+
+<script>
+(function () {
+  try {
+    var logged = false;
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      if (/^sb-.*-auth-token$/.test(k)) { logged = true; break; }
+    }
+    if (logged) {
+      document.getElementById('loginBtn').textContent = 'Dashboard';
+      document.getElementById('loginBtn').href = 'dashboard.html';
+      document.getElementById('regBtn').style.display = 'none';
+      document.getElementById('heroBtn').textContent = 'Go to Dashboard';
+      document.getElementById('heroBtn').href = 'dashboard.html';
+    }
+  } catch (e) {}
+})();
+</script>
 </body>
 </html>
