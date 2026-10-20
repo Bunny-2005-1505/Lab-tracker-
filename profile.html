@@ -14,7 +14,7 @@ h2{color:#fff;text-align:center;margin:10px 0 20px}
 .avatar-box{text-align:center;margin-bottom:6px}
 #avatar{width:110px;height:110px;border-radius:50%;background:teal;color:#fff;font-size:46px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;overflow:hidden}
 #avatar img{width:100%;height:100%;object-fit:cover}
-.photo-btns{display:flex;gap:8px;justify-content:center}
+.photo-btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 .photo-btns button{width:auto;padding:8px 14px;font-size:14px;margin:0}
 label{display:block;font-weight:bold;margin-top:10px}
 input,select,button{width:100%;margin:6px 0;padding:10px;font-size:16px;border:1px solid #bbb;border-radius:5px}
@@ -27,6 +27,11 @@ button.grey{background:#7f8c8d}
 .small{font-size:13px;color:#555}
 #qr{text-align:center}#qr img{width:200px;max-width:100%}
 code{word-break:break-all;background:#eee;padding:2px 4px}
+#camModal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:9000;padding:12px}
+.camBox{background:#fff;padding:14px;border-radius:10px;width:420px;max-width:100%}
+#camVideo{width:100%;border-radius:8px;background:#000;transform:scaleX(-1)}
+.camRow{display:flex;gap:8px;margin-top:8px}
+.camRow button{margin:0}
 @media (max-width:700px){
   body{padding:12px}.logo{height:40px;right:10px;top:8px}
   h2{margin-top:44px}.card{width:100%;padding:14px}
@@ -43,16 +48,18 @@ code{word-break:break-all;background:#eee;padding:2px 4px}
     <input type="file" id="photoInput" accept="image/png,image/jpeg,image/webp" style="display:none">
     <div class="photo-btns">
       <button type="button" id="photoBtn">Change photo</button>
+      <button type="button" id="cameraBtn">Take photo</button>
       <button type="button" class="red" id="photoRemove" style="display:none">Remove</button>
     </div>
     <div id="photoMsg" class="small"></div>
   </div>
 
   <label>Email<input id="email" readonly></label>
+  <label>Organization<input id="orgInfo" readonly placeholder="Personal account (no organization)"></label>
   <label>Full Name<input id="fullName"></label>
-  <label>Role
+  <label>Job title
     <select id="role">
-      <option value="">Select role</option>
+      <option value="">Select job title</option>
       <option>Lab Teacher</option>
       <option>Lab Assistant</option>
       <option>Other</option>
@@ -95,6 +102,16 @@ code{word-break:break-all;background:#eee;padding:2px 4px}
 
 <div class="card"><button onclick="location.href='dashboard.html'">Back to Dashboard</button></div>
 
+<div id="camModal">
+  <div class="camBox">
+    <video id="camVideo" autoplay playsinline muted></video>
+    <div class="camRow">
+      <button type="button" id="camSnap">Capture</button>
+      <button type="button" class="grey" id="camClose">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <script>
 let user = null, pendingFactor = null, avatarUrl = null;
 const $ = id => document.getElementById(id);
@@ -103,7 +120,6 @@ const STD = ['CSE Lab','Physics Lab','Chemistry Lab'];
 $('lab').addEventListener('change', () => {
   $('otherLabWrap').style.display = $('lab').value === 'Other' ? 'block' : 'none';
 });
-
 
 function showAvatar() {
   const box = $('avatar');
@@ -120,7 +136,6 @@ function showAvatar() {
     $('photoRemove').style.display = 'none';
   }
 }
-
 
 function resizeImage(file) {
   return new Promise((resolve, reject) => {
@@ -143,15 +158,9 @@ function resizeImage(file) {
   });
 }
 
-$('photoBtn').addEventListener('click', () => $('photoInput').click());
-
-$('photoInput').addEventListener('change', async () => {
-  const file = $('photoInput').files[0];
-  if (!file) return;
+async function uploadAvatar(file) {
   const msg = $('photoMsg');
   msg.style.color = '#555';
-  if (!/^image\/(png|jpeg|webp)$/.test(file.type)) { msg.style.color = 'red'; msg.textContent = 'Please choose a PNG, JPG or WebP image.'; return; }
-  if (file.size > 10 * 1024 * 1024) { msg.style.color = 'red'; msg.textContent = 'Image is too large (max 10 MB).'; return; }
   msg.textContent = 'Uploading...';
   try {
     const blob = await resizeImage(file);
@@ -170,8 +179,49 @@ $('photoInput').addEventListener('change', async () => {
     msg.style.color = 'red';
     msg.textContent = 'Upload failed: ' + (e.message || e);
   }
+}
+
+$('photoBtn').addEventListener('click', () => $('photoInput').click());
+
+$('photoInput').addEventListener('change', async () => {
+  const file = $('photoInput').files[0];
+  if (!file) return;
+  const msg = $('photoMsg');
+  if (!/^image\/(png|jpeg|webp)$/.test(file.type)) { msg.style.color = 'red'; msg.textContent = 'Please choose a PNG, JPG or WebP image.'; return; }
+  if (file.size > 10 * 1024 * 1024) { msg.style.color = 'red'; msg.textContent = 'Image is too large (max 10 MB).'; return; }
+  await uploadAvatar(file);
   $('photoInput').value = '';
 });
+
+let camStream = null;
+function closeCam() {
+  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+  $('camModal').style.display = 'none';
+}
+$('cameraBtn').addEventListener('click', async () => {
+  const msg = $('photoMsg');
+  msg.textContent = '';
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    msg.style.color = 'red'; msg.textContent = 'Camera is not supported in this browser.'; return;
+  }
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+    $('camVideo').srcObject = camStream;
+    $('camModal').style.display = 'flex';
+  } catch (e) {
+    msg.style.color = 'red';
+    msg.textContent = 'Camera access was blocked. Allow camera permission for this site in your browser settings, then try again.';
+  }
+});
+$('camSnap').addEventListener('click', () => {
+  const v = $('camVideo');
+  if (!v.videoWidth) return;
+  const c = document.createElement('canvas');
+  c.width = v.videoWidth; c.height = v.videoHeight;
+  c.getContext('2d').drawImage(v, 0, 0);
+  c.toBlob(async (b) => { closeCam(); if (b) await uploadAvatar(b); }, 'image/jpeg', 0.9);
+});
+$('camClose').addEventListener('click', closeCam);
 
 $('photoRemove').addEventListener('click', async () => {
   if (!confirm('Remove your profile photo?')) return;
@@ -185,6 +235,13 @@ $('photoRemove').addEventListener('click', async () => {
   msg.textContent = 'Photo removed';
 });
 
+async function loadOrg() {
+  try {
+    const r = await supabase.rpc('my_membership');
+    const m = r.data;
+    if (m) $('orgInfo').value = m.org_name + ' · ' + (m.role === 'assistant' ? 'Lab Assistant' : 'Lab Teacher');
+  } catch (e) {}
+}
 
 async function loadProfile() {
   const { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
@@ -215,8 +272,7 @@ $('saveBtn').addEventListener('click', async () => {
   $('msg').style.color = error ? 'red' : 'green';
   $('msg').textContent = error ? error.message : 'Profile saved ✔';
 });
-
-
+  
 async function refreshMfa() {
   const { data } = await supabase.auth.mfa.listFactors();
   const verified = (data && data.totp || []).find(f => f.status === 'verified');
@@ -270,6 +326,7 @@ $('mfaDisable').addEventListener('click', async () => {
   if (!u) { location.href = 'login.html'; return; }
   user = u;
   loadProfile();
+  loadOrg();
   refreshMfa();
 })();
 </script>
