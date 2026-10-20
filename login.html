@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta name="robots" content="noindex, nofollow">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
   <title>Login - LabTracker</title>
   <script src="supabaseClient.js"></script>
   <style>
@@ -25,7 +25,10 @@
     #loginForm .pw-toggle:hover { background: rgba(0,0,0,0.08); }
     #loginForm .pw-toggle.on { color: teal; }
 
-    
+    .forgot { text-align: right; margin: 2px 6px 0; font-size: 14px; }
+    .forgot a { color: #0b5ea8; font-weight: bold; text-decoration: none; }
+    .forgot a:hover { text-decoration: underline; }
+
     .divider { display: flex; align-items: center; gap: 10px; color: #444; font-size: 14px; margin: 18px 0 4px; }
     .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: #999; }
     #loginForm button.google-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; background: #fff; color: #333; border: 1px solid #bbb; margin: 12px 0 0; font-weight: bold; }
@@ -44,11 +47,12 @@
   <img class="logo" src="logo.png" alt="LabTracker logo">
   <form id="loginForm">
     <h2>Login</h2>
-    <input id="email" type="email" placeholder="Email" required />
+    <input id="email" type="email" placeholder="Email" required autocomplete="email" />
     <div class="pw-wrap">
-      <input id="password" type="password" placeholder="Password" required />
+      <input id="password" type="password" placeholder="Password" required autocomplete="current-password" />
       <button type="button" id="togglePw" class="pw-toggle" aria-label="Show password" title="Show password"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
     </div>
+    <div class="forgot"><a href="forgot-password.html">Forgot password?</a></div>
     <button type="submit">Login</button>
 
     <div class="divider">or</div>
@@ -89,6 +93,7 @@
       const email = e.target.email.value.trim();
       const password = e.target.password.value.trim();
       const msg = document.getElementById('msg');
+      msg.style.color = 'red';
       msg.textContent = 'Working...';
 
       try {
@@ -104,23 +109,21 @@
         msg.textContent = 'Unexpected error: ' + err.message;
       }
     };
+
     document.getElementById('googleBtn').addEventListener('click', async () => {
-  const msg = document.getElementById('msg');
-  msg.textContent = 'Opening Google...';
-  try {
-    if (!supabase.auth.signInWithOAuth) {
-      msg.textContent = 'Old Supabase library: update supabaseClient.js';
-      return;
-    }
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: location.origin + '/dashboard.html' }
+      const msg = document.getElementById('msg');
+      msg.style.color = 'red';
+      msg.textContent = 'Opening Google...';
+      try {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo: location.origin + '/dashboard.html' }
+        });
+        if (error) msg.textContent = error.message;
+      } catch (e) {
+        msg.textContent = 'Error: ' + e.message;
+      }
     });
-    if (error) msg.textContent = error.message;
-  } catch (e) {
-    msg.textContent = 'Error: ' + e.message;
-  }
-});
   </script>
   <script src="chatbot.js"></script>
 </body>
