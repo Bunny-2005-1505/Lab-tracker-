@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://lab-tracker.vercel.app/sitemap.xml
