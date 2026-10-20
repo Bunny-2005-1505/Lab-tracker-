@@ -9,7 +9,8 @@
 *{box-sizing:border-box}
 body{font-family:Arial,sans-serif;margin:0;padding:20px;min-height:100vh;background:url("download.jpg") center/cover fixed}
 .logo{position:absolute;top:10px;right:5%;height:60px}
-h2{color:#fff}
+h2{color:#fff;margin-bottom:6px}
+#roleBar{color:#fff;background:rgba(0,0,0,.45);display:inline-block;padding:6px 12px;border-radius:16px;font-size:14px;margin-bottom:12px}
 .wrap{background:rgba(0,0,0,.45);padding:10px;border-radius:8px;overflow-x:auto}
 table{width:100%;border-collapse:collapse;color:#fff}
 th,td{border:1px solid #bbb;padding:8px;text-align:left}
@@ -21,7 +22,6 @@ button{border:none;color:#fff;padding:6px 12px;border-radius:4px;cursor:pointer;
 .actions{white-space:nowrap}
 .expired{color:#ff7675;font-weight:bold}
 
-/* Modify popup */
 #modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:9000;padding:12px}
 #modal form{background:#fff;padding:18px;border-radius:10px;width:420px;max-width:100%;max-height:92vh;overflow-y:auto}
 #modal label{display:block;font-weight:bold;margin-top:8px;font-size:14px}
@@ -31,7 +31,6 @@ button{border:none;color:#fff;padding:6px 12px;border-radius:4px;cursor:pointer;
 .save{background:teal}.cancel{background:#7f8c8d}
 #editOtherWrap{display:none}
 
-/* ===== Mobile interface: table turns into cards ===== */
 @media (max-width:700px){
   body{padding:12px}
   .logo{height:40px;right:10px;top:8px}
@@ -52,11 +51,12 @@ button{border:none;color:#fff;padding:6px 12px;border-radius:4px;cursor:pointer;
 <body>
 <img class="logo" src="logo.png" alt="logo">
 <h2>Products</h2>
+<div id="roleBar">Loading...</div>
 
 <div class="wrap">
 <table>
   <thead>
-    <tr><th>Lab</th><th>QR Code</th><th>Name</th><th>Description</th><th>Quantity</th><th>Expiry Date</th><th>Actions</th></tr>
+    <tr><th>Lab</th><th>QR Code</th><th>Name</th><th>Description</th><th>Quantity</th><th>Expiry Date</th><th id="thBy" style="display:none">Added by</th><th>Actions</th></tr>
   </thead>
   <tbody id="tableBody"></tbody>
 </table>
@@ -64,7 +64,6 @@ button{border:none;color:#fff;padding:6px 12px;border-radius:4px;cursor:pointer;
 
 <button class="back" onclick="location.href='dashboard.html'">Back to Dashboard</button>
 
-<!-- Modify popup -->
 <div id="modal">
   <form id="editForm">
     <h3 style="margin:0 0 6px">Modify Product</h3>
@@ -90,23 +89,45 @@ button{border:none;color:#fff;padding:6px 12px;border-radius:4px;cursor:pointer;
 </div>
 
 <script>
-let currentUser = null, editingId = null;
+let currentUser = null, editingId = null, isTeacher = false;
 const tbody = document.getElementById('tableBody');
 const STD_LABS = ['CSE Lab', 'Physics Lab', 'Chemistry Lab'];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+async function loadRole() {
+  let data = null;
+  try {
+    const r = await supabase.rpc('my_membership');
+    data = r.data;
+  } catch (e) { data = null; }
+  const role = data && data.role;
+  isTeacher = role === 'owner' || role === 'teacher';
+  document.getElementById('roleBar').textContent = isTeacher
+    ? '👩‍🏫 ' + data.org_name + ' · Teacher view: all products in your organization'
+    : data ? '🧪 ' + data.org_name + ' · Your products' : '🧪 Your products';
+  document.getElementById('thBy').style.display = isTeacher ? '' : 'none';
+}
+
 async function loadProducts() {
   const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
   if (error) { alert('Error loading products: ' + error.message); return; }
-  render(data);
+  const names = {};
+  if (isTeacher && data.length) {
+    const ids = [...new Set(data.map(p => p.user_id))];
+    const pr = await supabase.from('profiles').select('id,full_name,email').in('id', ids);
+    (pr.data || []).forEach(x => { names[x.id] = x.full_name ? x.full_name + ' · ' + (x.email || '') : (x.email || ''); });
+  }
+  render(data, names);
 }
 
-function render(products) {
+function render(products, names) {
   tbody.innerHTML = '';
   const today = new Date(); today.setHours(0,0,0,0);
   products.forEach((p) => {
     const mine = currentUser && p.user_id === currentUser.id;
     const expired = p.expiry_date && new Date(p.expiry_date) < today;
+    const by = isTeacher
+      ? `<td data-label="Added by">${esc(names[p.user_id] || 'Unknown')}${mine ? ' (you)' : ''}</td>` : '';
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td data-label="Lab">${esc(p.lab)}</td>
@@ -115,6 +136,7 @@ function render(products) {
       <td data-label="Description">${esc(p.description)}</td>
       <td data-label="Quantity">${esc(p.quantity)}</td>
       <td data-label="Expiry" class="${expired ? 'expired' : ''}">${esc(p.expiry_date)}${expired ? ' (expired)' : ''}</td>
+      ${by}
       <td class="actions">${mine ? `<button class="mod">Modify</button><button class="del">Delete</button>` : ''}</td>`;
     if (mine) {
       tr.querySelector('.mod').addEventListener('click', () => openEdit(p));
@@ -129,7 +151,6 @@ function render(products) {
   });
 }
 
-// ---- Modify ----
 const eLab = document.getElementById('eLab'), otherWrap = document.getElementById('editOtherWrap');
 function toggleOther() {
   const o = eLab.value === 'Other';
@@ -158,7 +179,7 @@ document.getElementById('editForm').addEventListener('submit', async (e) => {
   const lab = eLab.value === 'Other' ? document.getElementById('eOtherLab').value.trim() : eLab.value;
   const qty = parseInt(document.getElementById('eQty').value);
   if (!lab || !(qty > 0)) { alert('Please fill all required fields'); return; }
-    const { data, error } = await supabase.from('products').update({
+  const { data, error } = await supabase.from('products').update({
     lab,
     qr_code: document.getElementById('eQr').value.trim(),
     name: document.getElementById('eName').value.trim(),
@@ -168,7 +189,7 @@ document.getElementById('editForm').addEventListener('submit', async (e) => {
   }).eq('id', editingId).eq('user_id', currentUser.id).select();
   if (error) { alert('Error updating: ' + error.message); return; }
   if (!data || data.length === 0) {
-    alert('Nothing was saved. The update permission is missing in Supabase. Run the SQL policy, then try again.');
+    alert('Nothing was saved. You can only edit your own products.');
     return;
   }
   alert('Product updated successfully!');
@@ -180,6 +201,7 @@ document.getElementById('editForm').addEventListener('submit', async (e) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) { location.href = 'login.html'; return; }
   currentUser = user;
+  await loadRole();
   loadProducts();
 })();
 </script>
