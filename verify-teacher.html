@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Teacher verification - LabTracker</title>
+<script src="supabaseClient.js"></script>
+<style>
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;margin:0;padding:16px;min-height:100vh;background:#f0f2f5 url("chemistry-lab-illustrated-background_52683-68249.jpg") center/cover fixed}
+.logo{position:absolute;top:12px;right:12px;height:48px}
+.card{width:100%;max-width:520px;margin:70px auto 90px;background:rgba(255,255,255,.92);padding:22px 18px;border-radius:10px;box-shadow:0 0 12px rgba(0,0,0,.15)}
+h2{margin:0 0 6px;font-size:24px}
+p.lead{margin:0 0 12px;color:#333;font-size:15px;line-height:1.45}
+label{display:block;font-weight:bold;margin-top:12px;font-size:14px}
+input[type=text]{width:100%;margin:6px 0 0;padding:12px;font-size:16px;border:1px solid #bbb;border-radius:6px}
+.hint{font-size:12.5px;color:#555;font-weight:normal;margin-top:3px}
+.pick{display:flex;gap:8px;margin-top:8px}
+.pick label{flex:1;margin:0;text-align:center;padding:12px 6px;border:1px dashed teal;border-radius:8px;color:teal;cursor:pointer;font-weight:bold;background:#fff}
+.pick input{display:none}
+#preview{display:none;width:100%;max-height:260px;object-fit:contain;margin-top:10px;border-radius:8px;background:#eee}
+.consent{display:flex;gap:10px;align-items:flex-start;margin-top:14px;font-weight:normal;font-size:13.5px;line-height:1.4}
+.consent input{margin-top:3px;width:18px;height:18px;flex:none}
+button.main{width:100%;margin-top:16px;padding:13px;font-size:16px;background:teal;color:#fff;border:none;border-radius:8px;cursor:pointer}
+button.main:disabled{background:#8bb;cursor:default}
+button.sec{width:100%;margin-top:10px;padding:12px;font-size:15px;background:#fff;color:teal;border:1px solid teal;border-radius:8px;cursor:pointer}
+#msg{margin-top:12px;font-size:14px;color:#b00020;min-height:18px}
+.status{padding:14px;border-radius:8px;margin:12px 0;font-size:15px;line-height:1.45}
+.ok{background:#e6f6ec;border:1px solid #5cb97a}
+.wait{background:#fff6e0;border:1px solid #e0b040}
+.no{background:#fdeaea;border:1px solid #d77}
+.note{margin-top:16px;padding-top:12px;border-top:1px solid #ddd;font-size:14px;color:#333}
+.note a{color:teal}
+.hide{display:none}
+</style>
+</head>
+<body>
+<img class="logo" src="logo.png" alt="LabTracker logo">
+<div class="card">
+  <h2>Teacher verification</h2>
+  <div id="body"><p class="lead">Loading...</p></div>
+  <div class="note">
+    Not a teacher? You do not need to do anything. You can use Lab Tracker as a <b>Lab Assistant / Other</b> and manage your own products.
+    <br><a href="dashboard.html">Go to dashboard</a>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let user = null, session = null, file = null;
+
+function show(html) { $('body').innerHTML = html; }
+function statusBox(cls, text) { return '<div class="status ' + cls + '">' + text + '</div>'; }
+
+function renderForm(prefill) {
+  show(
+    '<p class="lead">Teachers get access to every product in their college. To protect that, we check your college email and a photo of your ID card. An AI reads the card; anything unclear is reviewed by the administrator.</p>' +
+    '<label>Full name (as on your ID)<input type="text" id="fn" autocomplete="name"></label>' +
+    '<label>College / company name<input type="text" id="org" autocomplete="organization" placeholder="e.g. ABC College of Engineering"></label>' +
+    '<label>Employee ID <span class="hint">(optional)</span><input type="text" id="emp"></label>' +
+    '<label>Photo of your ID card<div class="hint">Lay it flat in good light. The whole card, name and college must be readable. No screenshots.</div></label>' +
+    '<div class="pick"><label id="camLbl"><input type="file" id="cam" accept="image/*" capture="environment">📷 Take photo</label>' +
+    '<label id="fileLbl"><input type="file" id="fil" accept="image/jpeg,image/png,image/webp">🖼️ Choose file</label></div>' +
+    '<img id="preview" alt="ID preview">' +
+    '<label class="consent"><input type="checkbox" id="consent"><span>I agree that my ID photo is read by an AI service (Google Gemini) and viewed by the Lab Tracker administrator. The photo is deleted once my request is decided. If it appears fake, the administrator may report it to my institution.</span></label>' +
+    '<button class="main" id="go">Submit for verification</button><div id="msg"></div>'
+  );
+  $('fn').value = prefill.name || '';
+  $('org').value = prefill.org || '';
+  const pick = (e) => { const f = e.target.files[0]; if (!f) return; file = f; const p = $('preview'); p.src = URL.createObjectURL(f); p.style.display = 'block'; };
+  $('cam').onchange = pick; $('fil').onchange = pick;
+  $('go').onclick = submit;
+}
+
+function loadImg(f) {
+  return new Promise((resolve, reject) => {
+    const u = URL.createObjectURL(f), i = new Image();
+    i.onload = () => { URL.revokeObjectURL(u); resolve(i); };
+    i.onerror = () => reject(new Error('Could not read this image'));
+    i.src = u;
+  });
+}
+async function compress(f) {
+  const img = await loadImg(f);
+  const max = 1600, k = Math.min(1, max / Math.max(img.width, img.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  for (const q of [0.85, 0.7, 0.55]) {
+    const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', q));
+    if (blob && blob.size < 4.5 * 1024 * 1024) return blob;
+  }
+  throw new Error('Photo is too large');
+}
+
+async function submit() {
+  const msg = $('msg'); msg.style.color = '#b00020'; msg.textContent = '';
+  const fullName = $('fn').value.trim(), orgName = $('org').value.trim(), employeeId = $('emp').value.trim();
+  if (fullName.length < 3) { msg.textContent = 'Enter your full name.'; return; }
+  if (orgName.length < 3) { msg.textContent = 'Enter your college or company name.'; return; }
+  if (!file) { msg.textContent = 'Add a photo of your ID card.'; return; }
+  if (!$('consent').checked) { msg.textContent = 'Please tick the consent box.'; return; }
+
+  const btn = $('go'); btn.disabled = true; btn.textContent = 'Uploading...';
+  try {
+    const blob = await compress(file);
+    const path = user.id + '/' + Date.now() + '.jpg';
+    const up = await supabase.storage.from('id-proofs').upload(path, blob, { contentType: 'image/jpeg', upsert: false });
+    if (up.error) throw new Error('Upload failed: ' + up.error.message);
+
+    btn.textContent = 'Checking your ID...';
+    const r = await fetch('/api/verify-teacher', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
+      body: JSON.stringify({ fullName, orgName, employeeId, path, consent: true })
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || 'Something went wrong');
+    if (j.status === 'approved') {
+      show(statusBox('ok', '✅ <b>You are verified as a Teacher.</b> You can now see all products in your organization.') + '<button class="main" onclick="location.href=\'dashboard.html\'">Go to dashboard</button>');
+    } else {
+      show(statusBox('wait', '⏳ <b>Sent for review.</b> The administrator will check your request. Come back to this page later to see the result.'));
+    }
+  } catch (e) {
+    msg.textContent = e.message;
+    btn.disabled = false; btn.textContent = 'Submit for verification';
+  }
+}
+
+(async () => {
+  const s = await supabase.auth.getSession();
+  session = s.data && s.data.session;
+  if (!session) { location.href = 'login.html'; return; }
+  user = session.user;
+
+  if (!user.email_confirmed_at) { show(statusBox('no', 'Please confirm your email address first (check your inbox for the link), then come back.')); return; }
+
+  const mem = (await supabase.rpc('my_membership')).data;
+  if (mem && (mem.role === 'owner' || mem.role === 'teacher')) {
+    show(statusBox('ok', '✅ You already have teacher access' + (mem.org_name ? ' at <b></b>.' : '.')));
+    if (mem.org_name) document.querySelector('#body b').textContent = mem.org_name;
+    return;
+  }
+
+  const last = await supabase.from('teacher_verifications').select('id,status,created_at,decided_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1);
+  const v = last.data && last.data[0];
+  if (v && v.status === 'approved') { show(statusBox('ok', '✅ You are verified as a Teacher.')); return; }
+  if (v && (v.status === 'pending' || v.status === 'flagged')) { show(statusBox('wait', '⏳ <b>Your request is under review.</b> The administrator will decide soon. Check back later.')); return; }
+
+  const prof = await supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle();
+  renderForm({ name: (prof.data && prof.data.full_name) || (user.user_metadata && user.user_metadata.full_name) || '', org: (mem && mem.org_name) || '' });
+  if (v && (v.status === 'rejected' || v.status === 'reported' || v.status === 'revoked')) {
+    $('body').insertAdjacentHTML('afterbegin', statusBox('no', 'Your last request was not approved. You can apply again with a clearer photo of your ID card.'));
+  }
+})();
+</script>
+<script src="chatbot.js"></script>
+</body>
+</html>
