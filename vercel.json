@@ -1,5 +1,9 @@
 {
   "crons": [
     { "path": "/api/send-reminders", "schedule": "30 3 * * *" }
-  ]
+  ],
+  "functions": {
+    "api/verify-teacher.js": { "maxDuration": 30 },
+    "api/admin-verifications.js": { "maxDuration": 30 }
+  }
 }
