@@ -7,54 +7,124 @@
 <script src="supabaseClient.js"></script>
 <style>
 *{box-sizing:border-box}
-body{font-family:Arial,sans-serif;margin:0;min-height:100vh;background:url("cartoon-laboratory-room-with-flasks_23-2148899916.jpg") center/cover fixed;display:flex;flex-direction:column;align-items:center}
-header{width:100%;background:rgba(255,255,255,.75);padding:10px 24px;box-shadow:0 2px 4px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:space-between;gap:12px}
-header h1{margin:0;font-size:32px;flex:1;text-align:center}
-header img{height:60px}
-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;padding:20px;text-align:center}
-h2{color:#000;font-size:28px;margin:0 0 30px;word-break:break-all}
-button.nav{width:350px;max-width:100%;margin:10px 0;padding:15px;font-size:18px;cursor:pointer;background:#32CD32;color:#fff;border:none;border-radius:5px}
-button.nav:hover{background:#007770}
-.contact{background:rgba(255,255,255,.85);padding:10px 18px;border-radius:8px;box-shadow:0 0 8px #b0b0b0;font-size:16px;margin:20px 0 90px}
-.contact a{color:#0077ff;font-weight:bold;text-decoration:none}
-.contact a:hover{text-decoration:underline}
-@media (max-width:700px){
-  header{flex-direction:column-reverse;padding:8px;gap:4px}
-  header h1{font-size:18px}
-  header img{height:40px}
-  main{justify-content:flex-start;padding:24px 14px}
-  h2{font-size:20px;margin-bottom:20px}
-  button.nav{width:100%;padding:18px;font-size:17px;border-radius:12px}
-  .contact{font-size:14px;width:100%;margin-bottom:90px}
-}
-.profile{background:#fff;color:#007770;font-weight:bold;text-decoration:none;padding:8px 14px;border-radius:20px;box-shadow:0 0 6px #999;white-space:nowrap}
+:root{--teal:#008080;--teal-dark:#006666;--ink:#1d2b2b;--muted:#5b6b6b}
+body{font-family:Arial,sans-serif;margin:0;min-height:100vh;color:var(--ink);background:linear-gradient(rgba(255,255,255,.62),rgba(255,255,255,.62)),url("cartoon-laboratory-room-with-flasks_23-2148899916.jpg") center/cover fixed}
+header{background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.12);position:sticky;top:0;z-index:5}
+.bar{max-width:760px;margin:0 auto;padding:8px 14px;display:flex;align-items:center;gap:12px}
+.bar img{height:44px}
+.bar h1{margin:0;font-size:17px;flex:1;line-height:1.25}
+.bar h1 small{display:block;font-weight:normal;color:var(--muted);font-size:12px}
+.profile{background:#fff;color:var(--teal);font-weight:bold;text-decoration:none;padding:8px 14px;border-radius:20px;border:1px solid var(--teal);white-space:nowrap;font-size:14px}
 .profile:hover{background:#e6fffd}
-@media (max-width:700px){.profile{align-self:flex-end}}
+main{max-width:760px;margin:0 auto;padding:18px 14px 100px}
+.welcome{margin:6px 0 14px}
+.welcome h2{margin:0;font-size:24px;overflow-wrap:anywhere}
+.welcome .mail{color:var(--muted);font-size:13px;margin-top:2px;overflow-wrap:anywhere}
+#orgLine{display:inline-block;margin:8px 0 0;padding:6px 12px;background:#e3f4f3;color:var(--teal-dark);border:1px solid #b6dcda;border-radius:18px;font-size:14px;font-weight:bold}
+#orgLine:empty{display:none}
+#orgLine a{color:var(--teal-dark);text-decoration:underline}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}
+.stat{background:#fff;border-radius:12px;padding:12px 8px;text-align:center;box-shadow:0 1px 5px rgba(0,0,0,.12);text-decoration:none;color:inherit;border-top:4px solid var(--teal)}
+.stat b{display:block;font-size:28px;line-height:1.1}
+.stat span{font-size:12.5px;color:var(--muted)}
+.stat.warn{border-top-color:#e0a100}.stat.bad{border-top-color:#c0392b}
+.stat.warn b{color:#a87500}.stat.bad b{color:#c0392b}
+.actions{display:grid;gap:10px;margin:8px 0 18px}
+.btn{display:block;width:100%;padding:16px;font-size:17px;border-radius:12px;cursor:pointer;text-align:center;text-decoration:none;font-weight:bold;border:2px solid var(--teal)}
+.btn.primary{background:var(--teal);color:#fff}
+.btn.primary:hover{background:var(--teal-dark)}
+.btn.outline{background:#fff;color:var(--teal)}
+.btn.outline:hover{background:#e6fffd}
+.card{background:rgba(255,255,255,.95);border-radius:12px;padding:14px 16px;margin-bottom:14px;box-shadow:0 1px 5px rgba(0,0,0,.12)}
+.card summary{font-weight:bold;font-size:16px;cursor:pointer}
+.card ul{margin:10px 0 0;padding-left:20px;line-height:1.5;font-size:14.5px}
+.card p{margin:8px 0 0;font-size:14.5px;line-height:1.5}
+.contact a{color:#0a63c9;font-weight:bold;text-decoration:none}
+#adminLink{display:none;margin-top:10px}
+@media (min-width:700px){.bar h1{font-size:20px}.actions{grid-template-columns:1fr 1fr}.welcome h2{font-size:28px}}
 </style>
 </head>
 <body>
 <header>
-  <header>
-  <h1>Lab Tracker - An Inventory Management System</h1>
-  <img src="logo.png" alt="logo">
-  <a class="profile" href="profile.html">👤 Profile</a>
-  </header>
+  <div class="bar">
+    <img src="logo.png" alt="LabTracker logo">
+    <h1>Lab Tracker<small>An Inventory Management System</small></h1>
+    <a class="profile" href="profile.html">👤 Profile</a>
+  </div>
 </header>
+
 <main>
-  <h2>Welcome <span id="usernameDisplay"></span></h2>
-  <p id="orgLine" style="margin:-20px 0 20px;font-weight:bold"></p>
-  <button class="nav" onclick="location.href='addproduct.html'">Add Products</button>
-  <button class="nav" onclick="location.href='products.html'">View Products</button>
-  <button class="nav" onclick="logout()">Logout</button>
-  <div class="contact">Contact: <a href="mailto:hemanthkumarpinnu@gmail.com">hemanthkumarpinnu@gmail.com</a></div>
+  <div class="welcome">
+    <h2>Welcome, <span id="usernameDisplay"></span></h2>
+    <div class="mail" id="emailDisplay"></div>
+    <div id="orgLine"></div>
+  </div>
+
+  <div class="stats">
+    <a class="stat" href="products.html"><b id="stTotal">-</b><span>Products</span></a>
+    <a class="stat warn" href="products.html"><b id="stSoon">-</b><span>Expiring in 7 days</span></a>
+    <a class="stat bad" href="products.html"><b id="stExpired">-</b><span>Expired</span></a>
+  </div>
+
+  <div class="actions">
+    <a class="btn primary" href="addproduct.html">➕ Add Products</a>
+    <a class="btn outline" href="products.html">📦 View Products</a>
+  </div>
+
+  <details class="card" open>
+    <summary>ℹ️ About Lab Tracker</summary>
+    <p>Lab Tracker is a simple digital inventory for school and college labs. It replaces paper registers so nothing gets lost, runs out, or expires unnoticed.</p>
+    <ul>
+      <li><b>Track</b> chemicals and equipment by lab, quantity and expiry date.</li>
+      <li><b>Scan</b> a QR code when adding a product, or type the code yourself.</li>
+      <li><b>Get reminders</b> by email 5 days and 1 day before something expires.</li>
+      <li><b>Lab Assistants</b> manage the products they add. <b>Verified Teachers</b> can see all products in their college.</li>
+      <li><b>Teachers</b> are verified with their college email and a photo of their ID card. The ID is checked by AI, reviewed by the administrator if anything looks wrong, never shown to other users, and deleted once the decision is made.</li>
+    </ul>
+  </details>
+
+  <div class="card contact">
+    <b>Contact</b>
+    <p>📧 <a href="mailto:hemanthkumarpinnu@gmail.com">hemanthkumarpinnu@gmail.com</a><br>📞 <a href="tel:+919177843853">+91 9177843853</a></p>
+    <a class="btn outline" id="adminLink" href="admin.html">🛡️ Review teacher requests</a>
+  </div>
 </main>
+
 <script>
+const cap = (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+const isoDay = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+
 (async () => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) { location.href = 'login.html'; return; }
-  document.getElementById('usernameDisplay').textContent = user.email;
+
+  document.getElementById('emailDisplay').textContent = user.email;
+  const prof = await supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle();
+  let name = (prof.data && prof.data.full_name) || (user.user_metadata && user.user_metadata.full_name) || '';
+  name = name.split(/\s+/).filter(w => w && !/\d/.test(w)).map(cap).join(' ');
+  if (!name) name = cap((user.email.split('@')[0].split(/[._\d]/)[0]) || 'there');
+  document.getElementById('usernameDisplay').textContent = name;
+
+  const res = await supabase.from('products').select('expiry_date');
+  if (!res.error && res.data) {
+    const today = isoDay(new Date());
+    const soon = isoDay(new Date(Date.now() + 7 * 86400000));
+    const items = res.data;
+    document.getElementById('stTotal').textContent = items.length;
+    document.getElementById('stExpired').textContent = items.filter(p => p.expiry_date && p.expiry_date < today).length;
+    document.getElementById('stSoon').textContent = items.filter(p => p.expiry_date && p.expiry_date >= today && p.expiry_date <= soon).length;
+  }
+
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const r = await fetch('/api/admin-verifications', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
+      body: JSON.stringify({ action: 'whoami' })
+    });
+    if (r.ok) document.getElementById('adminLink').style.display = 'block';
+  } catch (e) {}
 })();
-async function logout() { await supabase.auth.signOut(); location.href = 'login.html'; }
 </script>
 <script src="org-setup.js"></script>
 <script src="mfa-guard.js"></script>
