@@ -19,8 +19,6 @@ button:hover{background:#007770}
 .back{width:50%;display:block;margin:15px auto}
 #otherLabWrap{display:none}
 #msg{color:red;text-align:center;margin-top:10px}
-
-/* QR field + scanner */
 .qr-row{display:flex;gap:8px;align-items:center}
 .qr-row input{flex:1;min-width:0}
 .scan-btn{width:auto;white-space:nowrap;padding:10px 16px}
@@ -31,8 +29,6 @@ button:hover{background:#007770}
 .file-label{font-weight:normal;font-size:14px}
 .cancel-btn{background:#7f8c8d}
 .cancel-btn:hover{background:#6c7a7b}
-
-/* ===== Mobile interface ===== */
 @media (max-width:700px){
   body{padding:12px}
   .logo{height:40px;right:10px;top:8px}
@@ -78,7 +74,6 @@ button:hover{background:#007770}
 
 <button class="back" onclick="location.href='dashboard.html'">Back to Dashboard</button>
 
-<!-- QR scanner popup -->
 <div id="scanModal">
   <div class="scan-box">
     <h3 style="margin:0 0 8px">Scan QR Code</h3>
@@ -100,8 +95,6 @@ let currentUser = null;
   if (!user) { location.href = 'login.html'; return; }
   currentUser = user;
 })();
-
-// Show the text box only when "Other" is selected
 const labSelect = document.getElementById('labSelect');
 const otherWrap = document.getElementById('otherLabWrap');
 labSelect.addEventListener('change', () => {
@@ -110,7 +103,6 @@ labSelect.addEventListener('change', () => {
   document.getElementById('otherLab').required = isOther;
 });
 
-// ---- QR scanner ----
 const scanModal = document.getElementById('scanModal');
 const scanMsg = document.getElementById('scanMsg');
 let scanner = null;
