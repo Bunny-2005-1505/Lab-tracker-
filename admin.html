@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Verification review - LabTracker</title>
+<script src="supabaseClient.js"></script>
+<style>
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;margin:0;padding:14px;background:#eef3f3;color:#222}
+.wrap{max-width:760px;margin:0 auto}
+h2{margin:6px 0 4px}
+.sub{color:#555;font-size:14px;margin:0 0 12px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.tabs button{padding:8px 12px;border:1px solid teal;background:#fff;color:teal;border-radius:18px;font-size:14px;cursor:pointer}
+.tabs button.on{background:teal;color:#fff}
+.card{background:#fff;border-radius:10px;padding:14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.12);overflow-wrap:anywhere}
+.top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.name{font-weight:bold;font-size:17px}
+.meta{font-size:13.5px;color:#444;margin:3px 0}
+.badge{font-size:12px;padding:3px 9px;border-radius:12px;white-space:nowrap;font-weight:bold}
+.b-flagged{background:#fff1cc;color:#8a6100}.b-approved{background:#dcf3e3;color:#17693a}
+.b-rejected{background:#eee;color:#555}.b-reported{background:#e4def8;color:#4b3a9a}.b-revoked{background:#eee;color:#555}.b-pending{background:#e1ecf8;color:#1d4f91}
+.high{background:#fde0e0;color:#a30000}
+ul.why{margin:8px 0;padding-left:20px;font-size:14px;line-height:1.4}
+.ai{font-size:13px;background:#f5f8f8;border-radius:6px;padding:8px;margin:8px 0;line-height:1.5}
+.acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.acts button{flex:1;min-width:120px;padding:11px 8px;border:none;border-radius:8px;font-size:14px;color:#fff;cursor:pointer}
+.approve{background:#1b8a4b}.reject{background:#777}.report{background:#c0392b}.view{background:teal}.revoke{background:#b9770e}
+input[type=text],input[type=email],textarea{width:100%;padding:10px;font-size:15px;border:1px solid #bbb;border-radius:6px;margin-top:6px;font-family:inherit}
+textarea{min-height:230px}
+.idimg{max-width:100%;border-radius:8px;margin-top:8px;border:1px solid #ccc}
+.rep{margin-top:10px;padding:10px;border:1px solid #e1a1a1;border-radius:8px;background:#fff7f7}
+.warn{font-size:13px;color:#7a2020;margin:4px 0}
+.err{color:#b00020;font-size:14px;margin-top:6px}
+.empty{text-align:center;color:#666;padding:30px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h2>Teacher verification review</h2>
+  <p class="sub">You decide. Nothing is sent to a college unless you press <b>Send report</b>.</p>
+  <div class="tabs" id="tabs"></div>
+  <div id="list"><div class="empty">Loading...</div></div>
+  <p class="sub"><a href="dashboard.html">Back to dashboard</a></p>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let session = null, rows = [], tab = 'review';
+const TABS = [['review', 'Needs review'], ['auto', 'Auto-approved'], ['all', 'All']];
+
+async function api(body) {
+  const r = await fetch('/api/admin-verifications', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
+    body: JSON.stringify(body)
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || 'Request failed');
+  return j;
+}
+const el = (tag, props = {}, ...kids) => {
+  const e = document.createElement(tag);
+  Object.entries(props).forEach(([k, v]) => k === 'class' ? e.className = v : k === 'text' ? e.textContent = v : e[k] = v);
+  kids.forEach(k => k && e.append(k));
+  return e;
+};
+const when = (d) => d ? new Date(d).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '';
+
+function renderTabs() {
+  const t = $('tabs'); t.innerHTML = '';
+  TABS.forEach(([k, label]) => {
+    const n = rows.filter(r => k === 'review' ? r.status === 'flagged' : k === 'auto' ? (r.auto_decided && r.status === 'approved') : true).length;
+    const b = el('button', { text: label + ' (' + n + ')', class: tab === k ? 'on' : '' });
+    b.onclick = () => { tab = k; renderTabs(); renderList(); };
+    t.append(b);
+  });
+}
+
+function renderList() {
+  const box = $('list'); box.innerHTML = '';
+  const shown = rows.filter(r => tab === 'review' ? r.status === 'flagged' : tab === 'auto' ? (r.auto_decided && r.status === 'approved') : true);
+  if (!shown.length) { box.append(el('div', { class: 'empty', text: tab === 'review' ? 'Nothing needs your review. 🎉' : 'Nothing here yet.' })); return; }
+  shown.forEach(r => box.append(card(r)));
+}
+
+function card(r) {
+  const c = el('div', { class: 'card' });
+  const badges = el('div', {});
+  badges.append(el('span', { class: 'badge b-' + r.status, text: r.status }));
+  if (r.suspicion === 'high') badges.append(' ', el('span', { class: 'badge high', text: 'HIGH suspicion' }));
+  c.append(el('div', { class: 'top' }, el('div', { class: 'name', text: r.full_name }), badges));
+  c.append(el('div', { class: 'meta', text: 'Claims: ' + r.org_name + (r.employee_id ? ' · Emp ID ' + r.employee_id : '') }));
+  c.append(el('div', { class: 'meta', text: r.email + ' · ' + when(r.created_at) }));
+
+  if (r.reasons && r.reasons.length) {
+    const ul = el('ul', { class: 'why' }); r.reasons.forEach(x => ul.append(el('li', { text: x }))); c.append(ul);
+  }
+  const a = r.ai_result;
+  if (a) c.append(el('div', { class: 'ai', text:
+    'AI read from the ID → name: ' + (a.holder_name || '?') + ' · college: ' + (a.institution_name || '?') +
+    ' · title: ' + (a.designation || '?') + ' · type: ' + (a.document_type || '?') + (r.id_last4 ? ' · ID ends ' + r.id_last4 : '') +
+    ' · confidence ' + Math.round((a.confidence || 0) * 100) + '%' + (a.notes ? '\n' + a.notes : '') }));
+  if (r.reported_to) c.append(el('div', { class: 'meta', text: 'Reported to ' + r.reported_to + ' on ' + when(r.reported_at) }));
+  if (r.admin_note) c.append(el('div', { class: 'meta', text: 'Your note: ' + r.admin_note }));
+
+  const imgBox = el('div', {}), repBox = el('div', {}), err = el('div', { class: 'err' });
+  const note = el('input', { type: 'text', placeholder: 'Your note (optional)' });
+  const acts = el('div', { class: 'acts' });
+  const act = (cls, label, fn) => { const b = el('button', { class: cls, text: label }); b.onclick = async () => { err.textContent = ''; b.disabled = true; try { await fn(); } catch (e) { err.textContent = e.message; } b.disabled = false; }; acts.append(b); };
+
+  if (r.has_image) act('view', 'View ID photo', async () => {
+    const j = await api({ action: 'image', id: r.id });
+    imgBox.innerHTML = ''; imgBox.append(el('img', { class: 'idimg', src: j.url, alt: 'Submitted ID' }));
+  });
+  if (r.status === 'flagged') {
+    act('approve', '✅ Genuine - approve', async () => { if (!confirm('Give ' + r.full_name + ' teacher access?')) return; await api({ action: 'approve', id: r.id, note: note.value }); await refresh(); });
+    act('reject', 'Reject (not proven)', async () => { if (!confirm('Reject this request? They stay a Lab Assistant and are told by email.')) return; await api({ action: 'reject', id: r.id, note: note.value }); await refresh(); });
+  }
+  if (['flagged', 'rejected', 'approved'].includes(r.status)) {
+    act('report', '🚩 Cheating - prepare report', async () => {
+      const d = await api({ action: 'compose', id: r.id, note: note.value });
+      repBox.innerHTML = '';
+      const to = el('input', { type: 'email', placeholder: "College's email address (e.g. registrar@college.edu)" });
+      const subj = el('input', { type: 'text', value: d.subject });
+      const body = el('textarea', { value: d.body });
+      const attach = el('input', { type: 'checkbox' });
+      const rep = el('div', { class: 'rep' },
+        el('b', { text: 'Review this email before it is sent' }),
+        el('div', { class: 'warn', text: 'Only send if you are sure. The AI can be wrong, and an honest teacher could be wrongly named.' }),
+        to, subj, body);
+      if (r.has_image) rep.append(el('label', { class: 'warn' }, attach, ' Attach the submitted ID photo'));
+      const send = el('button', { class: 'report', text: 'Send report to college', style: 'width:100%;margin-top:10px;padding:12px;border:none;border-radius:8px;color:#fff;font-size:15px;cursor:pointer' });
+      const e2 = el('div', { class: 'err' });
+      send.onclick = async () => {
+        e2.textContent = '';
+        if (!confirm('Send this email to ' + to.value + '?')) return;
+        send.disabled = true; send.textContent = 'Sending...';
+        try { await api({ action: 'report', id: r.id, note: note.value, to: to.value, subject: subj.value, body: body.value, attach: attach.checked }); await refresh(); }
+        catch (e) { e2.textContent = e.message; send.disabled = false; send.textContent = 'Send report to college'; }
+      };
+      rep.append(send, e2);
+      repBox.append(rep);
+    });
+  }
+  if (r.status === 'approved') act('revoke', 'Remove teacher access', async () => { if (!confirm('Remove teacher access from ' + r.full_name + '?')) return; await api({ action: 'revoke', id: r.id, note: note.value }); await refresh(); });
+
+  if (acts.children.length) c.append(note, acts);
+  c.append(err, imgBox, repBox);
+  return c;
+}
+
+async function refresh() {
+  const j = await api({ action: 'list' });
+  rows = j.rows; renderTabs(); renderList();
+}
+
+(async () => {
+  const s = await supabase.auth.getSession();
+  session = s.data && s.data.session;
+  if (!session) { location.href = 'login.html'; return; }
+  try { await refresh(); }
+  catch (e) { $('list').innerHTML = ''; $('list').append(el('div', { class: 'empty', text: e.message === 'Not allowed' ? 'This page is only for the Lab Tracker administrator.' : e.message })); }
+})();
+</script>
+</body>
+</html>
