@@ -4,8 +4,7 @@
 <meta name="robots" content="noindex, nofollow">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex">
-<title>Verification review - LabTracker</title>
+<title>Admin review - LabTracker</title>
 <script src="supabaseClient.js"></script>
 <style>
 *{box-sizing:border-box}
@@ -36,11 +35,24 @@ textarea{min-height:230px}
 .warn{font-size:13px;color:#7a2020;margin:4px 0}
 .err{color:#b00020;font-size:14px;margin-top:6px}
 .empty{text-align:center;color:#666;padding:30px 0}
+
+/* feedback tab */
+.stats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.stat{background:#fff;border-radius:10px;padding:10px 14px;box-shadow:0 1px 4px rgba(0,0,0,.12);flex:1;min-width:110px}
+.stat b{display:block;font-size:22px;color:#007770}
+.stat span{font-size:12px;color:#555}
+.fbfilters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.fbfilters select{padding:9px 12px;font-size:14px;border:1px solid teal;border-radius:18px;background:#fff;color:#007770}
+.stars{color:#f5a623;font-size:18px;letter-spacing:1px}
+.stars .off{color:#ccc}
+.c-problem{background:#fde0e0;color:#a30000}.c-suggestion{background:#e1ecf8;color:#1d4f91}
+.c-compliment{background:#dcf3e3;color:#17693a}.c-other{background:#eee;color:#555}
+.fbmsg{margin:8px 0;font-size:15px;line-height:1.45;white-space:pre-wrap}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h2>Teacher verification review</h2>
+  <h2>Admin review</h2>
   <p class="sub">You decide. Nothing is sent to a college unless you press <b>Send report</b>.</p>
   <div class="tabs" id="tabs"></div>
   <div id="list"><div class="empty">Loading...</div></div>
@@ -50,7 +62,8 @@ textarea{min-height:230px}
 <script>
 const $ = (id) => document.getElementById(id);
 let session = null, rows = [], tab = 'review';
-const TABS = [['review', 'Needs review'], ['auto', 'Auto-approved'], ['all', 'All']];
+let fbRows = [], fbError = '', fbCat = '', fbRating = '';
+const TABS = [['review', 'Needs review'], ['auto', 'Auto-approved'], ['all', 'All'], ['feedback', '📝 Feedback']];
 
 async function api(body) {
   const r = await fetch('/api/admin-verifications', {
@@ -70,23 +83,90 @@ const el = (tag, props = {}, ...kids) => {
 };
 const when = (d) => d ? new Date(d).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '';
 
+function countFor(k) {
+  if (k === 'feedback') return fbRows.length;
+  return rows.filter(r => k === 'review' ? r.status === 'flagged' : k === 'auto' ? (r.auto_decided && r.status === 'approved') : true).length;
+}
+
 function renderTabs() {
   const t = $('tabs'); t.innerHTML = '';
   TABS.forEach(([k, label]) => {
-    const n = rows.filter(r => k === 'review' ? r.status === 'flagged' : k === 'auto' ? (r.auto_decided && r.status === 'approved') : true).length;
-    const b = el('button', { text: label + ' (' + n + ')', class: tab === k ? 'on' : '' });
+    const b = el('button', { text: label + ' (' + countFor(k) + ')', class: tab === k ? 'on' : '' });
     b.onclick = () => { tab = k; renderTabs(); renderList(); };
     t.append(b);
   });
 }
 
 function renderList() {
+  if (tab === 'feedback') { renderFeedback(); return; }
   const box = $('list'); box.innerHTML = '';
   const shown = rows.filter(r => tab === 'review' ? r.status === 'flagged' : tab === 'auto' ? (r.auto_decided && r.status === 'approved') : true);
   if (!shown.length) { box.append(el('div', { class: 'empty', text: tab === 'review' ? 'Nothing needs your review. 🎉' : 'Nothing here yet.' })); return; }
   shown.forEach(r => box.append(card(r)));
 }
 
+/* ---------- Feedback tab ---------- */
+function starsEl(n) {
+  const s = el('span', { class: 'stars' });
+  if (!n) { s.textContent = 'No rating'; s.style.color = '#888'; s.style.fontSize = '13px'; return s; }
+  for (let i = 1; i <= 5; i++) s.append(el('span', { class: i <= n ? '' : 'off', text: '★' }));
+  return s;
+}
+
+function renderFeedback() {
+  const box = $('list'); box.innerHTML = '';
+  if (fbError) {
+    box.append(el('div', { class: 'card' },
+      el('div', { class: 'err', text: 'Could not load feedback: ' + fbError }),
+      el('div', { class: 'meta', text: 'If this says permission denied, run the feedback SQL in Supabase again (it adds your admin access and the read rule).' })));
+    return;
+  }
+  const rated = fbRows.filter(r => r.rating);
+  const avg = rated.length ? (rated.reduce((a, r) => a + r.rating, 0) / rated.length).toFixed(1) : '-';
+  const problems = fbRows.filter(r => r.category === 'problem').length;
+  const stats = el('div', { class: 'stats' });
+  [[fbRows.length, 'Total messages'], [avg, 'Average rating'], [problems, 'Problems reported']].forEach(x => {
+    stats.append(el('div', { class: 'stat' }, el('b', { text: String(x[0]) }), el('span', { text: x[1] })));
+  });
+  box.append(stats);
+
+  const f = el('div', { class: 'fbfilters' });
+  const catSel = el('select', {});
+  [['', 'All categories'], ['problem', 'Problems'], ['suggestion', 'Suggestions'], ['compliment', 'Compliments'], ['other', 'Other']].forEach(o => {
+    const op = el('option', { text: o[1] }); op.value = o[0]; catSel.append(op);
+  });
+  catSel.value = fbCat;
+  const rtSel = el('select', {});
+  [['', 'Any rating'], ['5', '5 stars'], ['4', '4 stars'], ['3', '3 stars'], ['2', '2 stars'], ['1', '1 star'], ['0', 'No rating']].forEach(o => {
+    const op = el('option', { text: o[1] }); op.value = o[0]; rtSel.append(op);
+  });
+  rtSel.value = fbRating;
+  catSel.onchange = () => { fbCat = catSel.value; renderFeedback(); };
+  rtSel.onchange = () => { fbRating = rtSel.value; renderFeedback(); };
+  f.append(catSel, rtSel);
+  box.append(f);
+
+  const shown = fbRows.filter(r => (!fbCat || r.category === fbCat) &&
+    (fbRating === '' || (fbRating === '0' ? !r.rating : r.rating === Number(fbRating))));
+  if (!shown.length) { box.append(el('div', { class: 'empty', text: fbRows.length ? 'No feedback matches these filters.' : 'No feedback yet.' })); return; }
+  shown.forEach(r => {
+    const c = el('div', { class: 'card' });
+    c.append(el('div', { class: 'top' }, starsEl(r.rating), el('span', { class: 'badge c-' + r.category, text: r.category })));
+    c.append(el('div', { class: 'fbmsg', text: r.message }));
+    c.append(el('div', { class: 'meta', text: (r.email || 'unknown') + ' · ' + when(r.created_at) + (r.page ? ' · page ' + r.page : '') }));
+    box.append(c);
+  });
+}
+
+async function loadFeedback() {
+  try {
+    const r = await supabase.from('feedback').select('*').order('created_at', { ascending: false }).limit(500);
+    if (r.error) { fbError = r.error.message; fbRows = []; }
+    else { fbError = ''; fbRows = r.data || []; }
+  } catch (e) { fbError = e.message || String(e); fbRows = []; }
+}
+
+/* ---------- Verification cards (unchanged) ---------- */
 function card(r) {
   const c = el('div', { class: 'card' });
   const badges = el('div', {});
@@ -155,7 +235,9 @@ function card(r) {
 
 async function refresh() {
   const j = await api({ action: 'list' });
-  rows = j.rows; renderTabs(); renderList();
+  rows = j.rows;
+  await loadFeedback();
+  renderTabs(); renderList();
 }
 
 (async () => {
