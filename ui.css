@@ -119,3 +119,5 @@ input:focus,select:focus,textarea:focus{border-color:var(--teal);outline:3px sol
 .m-top{display:none;align-items:center;gap:10px;font-weight:700;font-size:17px;margin-bottom:16px}
 .m-top img{height:30px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+[hidden]{display:none!important}
+@media (max-width:860px){#ltChatBtn{bottom:80px!important}#ltChat{bottom:146px!important;height:62vh!important}}
