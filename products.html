@@ -4,206 +4,168 @@
 <meta name="robots" content="noindex, nofollow">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Products - LabTracker</title>
-<script src="supabaseClient.js"></script>
+<title>Stock - LabTracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ui.css">
 <style>
-*{box-sizing:border-box}
-body{font-family:Arial,sans-serif;margin:0;padding:20px;min-height:100vh;background:url("download.jpg") center/cover fixed}
-.logo{position:absolute;top:10px;right:5%;height:60px}
-h2{color:#fff;margin-bottom:6px}
-#roleBar{color:#fff;background:rgba(0,0,0,.45);display:inline-block;padding:6px 12px;border-radius:16px;font-size:14px;margin-bottom:12px}
-.wrap{background:rgba(0,0,0,.45);padding:10px;border-radius:8px;overflow-x:auto}
-table{width:100%;border-collapse:collapse;color:#fff}
-th,td{border:1px solid #bbb;padding:8px;text-align:left}
-th{background:teal}
-button{border:none;color:#fff;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:14px}
-.del{background:#c0392b}.del:hover{background:#e74c3c}
-.mod{background:#2980b9}.mod:hover{background:#3498db}
-.back{background:teal;padding:10px 16px;margin-top:14px;font-size:16px}
-.actions{white-space:nowrap}
-.expired{color:#ff7675;font-weight:bold}
-
-#modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:9000;padding:12px}
-#modal form{background:#fff;padding:18px;border-radius:10px;width:420px;max-width:100%;max-height:92vh;overflow-y:auto}
-#modal label{display:block;font-weight:bold;margin-top:8px;font-size:14px}
-#modal input,#modal textarea,#modal select{width:100%;padding:10px;font-size:16px;margin-top:4px;border:1px solid #bbb;border-radius:5px}
-#modal .row{display:flex;gap:10px;margin-top:14px}
-#modal .row button{flex:1;padding:11px;font-size:16px}
-.save{background:teal}.cancel{background:#7f8c8d}
-#editOtherWrap{display:none}
-
-@media (max-width:700px){
-  body{padding:12px}
-  .logo{height:40px;right:10px;top:8px}
-  h2{margin-top:44px}
-  .wrap{padding:0;background:none;overflow:visible}
-  table,thead,tbody,tr,td{display:block;width:100%}
-  thead{display:none}
-  tr{background:rgba(0,0,0,.6);border-radius:10px;margin-bottom:12px;padding:10px}
-  td{border:none;padding:5px 0;display:flex;justify-content:space-between;gap:12px;text-align:right}
-  td::before{content:attr(data-label);font-weight:bold;color:#7fe0d8;text-align:left}
-  td.actions{justify-content:flex-end;gap:8px;padding-top:8px}
-  td.actions::before{content:""}
-  td.actions button{flex:1;padding:10px}
-  .back{width:100%}
-}
+.tools{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.tools input,.tools select{margin:0;width:auto;flex:1;min-width:150px}
+.tools input{flex:2;min-width:200px}
+.qty{display:flex;align-items:center;gap:8px}
+.tbl td.qty-c{min-width:190px}
+@media (max-width:860px){.qty{justify-content:flex-end}}
 </style>
+<script src="supabaseClient.js"></script>
 </head>
-<body>
-<img class="logo" src="logo.png" alt="logo">
-<h2>Products</h2>
-<div id="roleBar">Loading...</div>
+<body data-page="products">
+<main class="page">
+  <div class="m-top"><img src="logo.png" alt="">Lab Tracker</div>
+  <header class="head">
+    <div><h1>Stock</h1><p>Tap <b>Used 1</b> whenever you use something. Takes one second.</p><span class="chip" id="roleBar"></span></div>
+    <a class="btn pri" href="addproduct.html">+ Add product</a>
+  </header>
 
-<div class="wrap">
-<table>
-  <thead>
-    <tr><th>Lab</th><th>QR Code</th><th>Name</th><th>Description</th><th>Quantity</th><th>Expiry Date</th><th id="thBy" style="display:none">Added by</th><th>Actions</th></tr>
-  </thead>
-  <tbody id="tableBody"></tbody>
-</table>
-</div>
+  <div class="tools">
+    <input id="q" type="search" placeholder="Search by name or code" aria-label="Search">
+    <select id="fLab" aria-label="Lab"><option value="">All labs</option></select>
+    <select id="fRisk" aria-label="Status"><option value="">All status</option><option value="critical">Critical</option><option value="watch">Watch</option><option value="ok">OK</option></select>
+  </div>
 
-<button class="back" onclick="location.href='dashboard.html'">Back to Dashboard</button>
+  <div class="card" style="overflow:hidden">
+    <table class="tbl">
+      <thead><tr><th>Name</th><th>Lab</th><th>In stock</th><th>Status</th><th>Expiry</th><th id="thBy" style="display:none">Added by</th><th></th></tr></thead>
+      <tbody id="tableBody"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody>
+    </table>
+  </div>
+</main>
 
-<div id="modal">
-  <form id="editForm">
-    <h3 style="margin:0 0 6px">Modify Product</h3>
-    <label>Lab
-      <select id="eLab">
-        <option value="CSE Lab">CSE Lab</option>
-        <option value="Physics Lab">Physics Lab</option>
-        <option value="Chemistry Lab">Chemistry Lab</option>
-        <option value="Other">Other (type lab name)</option>
-      </select>
-    </label>
-    <div id="editOtherWrap"><label>Other Lab Name<input id="eOtherLab" type="text"></label></div>
-    <label>QR Code<input id="eQr" type="text"></label>
-    <label>Name<input id="eName" type="text" required></label>
-    <label>Description<textarea id="eDesc"></textarea></label>
-    <label>Quantity<input id="eQty" type="number" min="1" required></label>
-    <label>Expiry Date<input id="eExp" type="date" required></label>
-    <div class="row">
-      <button type="submit" class="save">Save</button>
-      <button type="button" class="cancel" id="cancelEdit">Cancel</button>
-    </div>
-  </form>
-</div>
+<div class="ov" id="modal"><form class="modal" id="editForm">
+  <h3>Edit product</h3>
+  <label>Lab<select id="eLab"><option>CSE Lab</option><option>Physics Lab</option><option>Chemistry Lab</option><option value="Other">Other (type lab name)</option></select></label>
+  <div id="editOtherWrap" hidden><label>Lab name<input id="eOtherLab"></label></div>
+  <label>Name<input id="eName" required></label>
+  <label>Code<input id="eQr"></label>
+  <label>Description<textarea id="eDesc" rows="2"></textarea></label>
+  <div class="f2"><label>Quantity<input id="eQty" type="number" min="0" required></label><label>Unit<input id="eUnit" placeholder="bottles, packs…"></label></div>
+  <div class="f2"><label>Reorder at<input id="eLow" type="number" min="0"><span class="hint">Warn when stock reaches this</span></label><label>Expiry<input id="eExp" type="date" required></label></div>
+  <div class="mact"><button type="button" class="btn" id="cancelEdit">Cancel</button><button class="btn pri">Save</button></div>
+</form></div>
 
+<div class="ov" id="useModal"><form class="modal" id="useForm">
+  <h3 id="useTitle">Log usage</h3>
+  <div class="f2"><label>Amount used<input id="uAmt" type="number" min="1" value="1" required></label><label>Note (optional)<input id="uNote" placeholder="e.g. Practical 3"></label></div>
+  <div class="mact"><button type="button" class="btn" id="cancelUse">Cancel</button><button class="btn pri">Log usage</button></div>
+</form></div>
+
+<script src="nav.js"></script>
 <script>
-let currentUser = null, editingId = null, isTeacher = false;
-const tbody = document.getElementById('tableBody');
-const STD_LABS = ['CSE Lab', 'Physics Lab', 'Chemistry Lab'];
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $ = (id) => document.getElementById(id);
+const STD = ['CSE Lab', 'Physics Lab', 'Chemistry Lab'];
+let me = null, isTeacher = false, rows = [], names = {}, editing = null, usingId = null, hasRisk = true;
 
 async function loadRole() {
-  let data = null;
-  try {
-    const r = await supabase.rpc('my_membership');
-    data = r.data;
-  } catch (e) { data = null; }
-  const role = data && data.role;
-  isTeacher = role === 'owner' || role === 'teacher';
-  document.getElementById('roleBar').textContent = isTeacher
-    ? '👩‍🏫 ' + data.org_name + ' · Teacher view: all products in your organization'
-    : data ? '🧪 ' + data.org_name + ' · Your products' : '🧪 Your products';
-  document.getElementById('thBy').style.display = isTeacher ? '' : 'none';
+  let d = null; try { d = (await supabase.rpc('my_membership')).data; } catch (e) {}
+  isTeacher = !!d && (d.role === 'owner' || d.role === 'teacher');
+  $('roleBar').textContent = isTeacher ? d.org_name + ' · all products in your organization' : d ? d.org_name + ' · your products' : 'Your products';
+  $('thBy').style.display = isTeacher ? '' : 'none';
 }
 
-async function loadProducts() {
-  const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
-  if (error) { alert('Error loading products: ' + error.message); return; }
-  const names = {};
-  if (isTeacher && data.length) {
-    const ids = [...new Set(data.map(p => p.user_id))];
+async function load() {
+  let r = await supabase.from('product_risk').select('*');
+  hasRisk = !r.error;
+  let base = await supabase.from('products').select('*').order('created_at', { ascending: false });
+  if (base.error) { toast(base.error.message, { error: true }); return; }
+  const rk = {}; if (hasRisk) r.data.forEach(x => rk[x.product_id] = x);
+  rows = base.data.map(p => ({ ...p, ...(rk[p.id] || {}), id: p.id, risk: (rk[p.id] || {}).risk || 'ok', unit: p.unit || 'units' }));
+  if (isTeacher && rows.length) {
+    const ids = [...new Set(rows.map(p => p.user_id))];
     const pr = await supabase.from('profiles').select('id,full_name,email').in('id', ids);
-    (pr.data || []).forEach(x => { names[x.id] = x.full_name ? x.full_name + ' · ' + (x.email || '') : (x.email || ''); });
+    (pr.data || []).forEach(x => names[x.id] = x.full_name || x.email || '');
   }
-  render(data, names);
+  const labs = [...new Set(rows.map(p => p.lab))].sort();
+  $('fLab').innerHTML = '<option value="">All labs</option>' + labs.map(l => `<option>${esc(l)}</option>`).join('');
+  render();
 }
 
-function render(products, names) {
-  tbody.innerHTML = '';
-  const today = new Date(); today.setHours(0,0,0,0);
-  products.forEach((p) => {
-    const mine = currentUser && p.user_id === currentUser.id;
-    const expired = p.expiry_date && new Date(p.expiry_date) < today;
-    const by = isTeacher
-      ? `<td data-label="Added by">${esc(names[p.user_id] || 'Unknown')}${mine ? ' (you)' : ''}</td>` : '';
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td data-label="Lab">${esc(p.lab)}</td>
-      <td data-label="QR Code">${esc(p.qr_code)}</td>
-      <td data-label="Name">${esc(p.name)}</td>
-      <td data-label="Description">${esc(p.description)}</td>
-      <td data-label="Quantity">${esc(p.quantity)}</td>
-      <td data-label="Expiry" class="${expired ? 'expired' : ''}">${esc(p.expiry_date)}${expired ? ' (expired)' : ''}</td>
-      ${by}
-      <td class="actions">${mine ? `<button class="mod">Modify</button><button class="del">Delete</button>` : ''}</td>`;
-    if (mine) {
-      tr.querySelector('.mod').addEventListener('click', () => openEdit(p));
-      tr.querySelector('.del').addEventListener('click', async () => {
-        if (!confirm('Delete "' + p.name + '"?')) return;
-        const { error } = await supabase.from('products').delete().eq('id', p.id);
-        if (error) { alert('Error deleting: ' + error.message); return; }
-        loadProducts();
-      });
-    }
-    tbody.appendChild(tr);
-  });
+const rank = { critical: 0, watch: 1, ok: 2 };
+function render() {
+  const q = $('q').value.trim().toLowerCase(), l = $('fLab').value, k = $('fRisk').value;
+  const list = rows.filter(p => (!q || (p.name + ' ' + (p.qr_code || '')).toLowerCase().includes(q)) && (!l || p.lab === l) && (!k || p.risk === k))
+    .sort((a, b) => rank[a.risk] - rank[b.risk]);
+  const tb = $('tableBody');
+  if (!list.length) { tb.innerHTML = `<tr><td colspan="7" class="empty"><b>${rows.length ? 'No matches' : 'No products yet'}</b>${rows.length ? 'Try a different search or filter.' : 'Add your first product to get started.'}</td></tr>`; return; }
+  const today = new Date().setHours(0, 0, 0, 0);
+  tb.innerHTML = list.map(p => {
+    const mine = p.user_id === me.id, expired = p.expiry_date && Date.parse(p.expiry_date + 'T00:00:00') < today;
+    const why = p.risk === 'critical' ? (p.quantity <= (p.low_stock_level || 0) ? 'Reorder now' : 'Runs out in ~' + p.days_left + 'd') : p.risk === 'watch' ? (p.days_left != null ? 'Low in ~' + p.days_left + 'd' : 'May expire unused') : 'OK';
+    return `<tr data-id="${p.id}">
+      <td class="nm" data-l="Name">${esc(p.name)}<div class="sub">${esc(p.qr_code || '')}${p.description ? (p.qr_code ? ' · ' : '') + esc(p.description) : ''}</div></td>
+      <td data-l="Lab">${esc(p.lab)}</td>
+      <td class="qty-c" data-l="In stock"><span class="qty"><span class="num">${p.quantity}</span><span class="sub">${esc(p.unit)}</span>
+        <button class="btn sm use" data-a="use1" ${p.quantity < 1 ? 'disabled' : ''}>Used 1</button><button class="btn sm" data-a="useN" title="Log a different amount" aria-label="Log a different amount">⋯</button></span></td>
+      <td data-l="Status"><span class="badge b-${p.risk}">${esc(why)}</span>${p.stale ? '<div class="sub">Usage not logged lately</div>' : ''}</td>
+      <td data-l="Expiry" style="${expired ? 'color:var(--red);font-weight:700' : ''}">${esc(p.expiry_date || '—')}${expired ? ' (expired)' : ''}</td>
+      ${isTeacher ? `<td data-l="Added by">${esc(names[p.user_id] || 'Unknown')}${mine ? ' (you)' : ''}</td>` : ''}
+      <td class="act">${mine ? '<button class="btn sm" data-a="edit">Edit</button><button class="btn sm dng" data-a="del">Delete</button>' : ''}</td></tr>`;
+  }).join('');
 }
 
-const eLab = document.getElementById('eLab'), otherWrap = document.getElementById('editOtherWrap');
-function toggleOther() {
-  const o = eLab.value === 'Other';
-  otherWrap.style.display = o ? 'block' : 'none';
-  document.getElementById('eOtherLab').required = o;
+async function logUse(id, amt, note) {
+  const { data, error } = await supabase.rpc('log_usage', { p_product: id, p_amount: amt, p_note: note || null });
+  if (error) return toast(error.message.includes('Could not find') ? 'Run the database migration first (supabase/002_usage_and_booking.sql).' : error.message, { error: true });
+  toast('Logged ' + amt + '. ' + data + ' left', { action: { label: 'Undo', run: async () => {
+    const u = await supabase.rpc('undo_usage', { p_product: id });
+    if (u.error) return toast(u.error.message, { error: true }); toast('Undone'); load(); } } });
+  load();
 }
-eLab.addEventListener('change', toggleOther);
 
-function openEdit(p) {
-  editingId = p.id;
-  if (STD_LABS.includes(p.lab)) { eLab.value = p.lab; document.getElementById('eOtherLab').value = ''; }
-  else { eLab.value = 'Other'; document.getElementById('eOtherLab').value = p.lab; }
-  toggleOther();
-  document.getElementById('eQr').value = p.qr_code || '';
-  document.getElementById('eName').value = p.name || '';
-  document.getElementById('eDesc').value = p.description || '';
-  document.getElementById('eQty').value = p.quantity;
-  document.getElementById('eExp').value = p.expiry_date || '';
-  document.getElementById('modal').style.display = 'flex';
-}
-const closeModal = () => { document.getElementById('modal').style.display = 'none'; editingId = null; };
-document.getElementById('cancelEdit').addEventListener('click', closeModal);
-
-document.getElementById('editForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const lab = eLab.value === 'Other' ? document.getElementById('eOtherLab').value.trim() : eLab.value;
-  const qty = parseInt(document.getElementById('eQty').value);
-  if (!lab || !(qty > 0)) { alert('Please fill all required fields'); return; }
-  const { data, error } = await supabase.from('products').update({
-    lab,
-    qr_code: document.getElementById('eQr').value.trim(),
-    name: document.getElementById('eName').value.trim(),
-    description: document.getElementById('eDesc').value.trim(),
-    quantity: qty,
-    expiry_date: document.getElementById('eExp').value
-  }).eq('id', editingId).eq('user_id', currentUser.id).select();
-  if (error) { alert('Error updating: ' + error.message); return; }
-  if (!data || data.length === 0) {
-    alert('Nothing was saved. You can only edit your own products.');
-    return;
+$('tableBody').addEventListener('click', async (e) => {
+  const b = e.target.closest('button[data-a]'); if (!b) return;
+  const id = b.closest('tr').dataset.id, p = rows.find(x => x.id === id), a = b.dataset.a;
+  if (a === 'use1') { b.disabled = true; logUse(id, 1); }
+  else if (a === 'useN') { usingId = id; $('useTitle').textContent = 'Log usage: ' + p.name; $('uAmt').max = p.quantity; $('uAmt').value = 1; $('uNote').value = ''; $('useModal').classList.add('show'); $('uAmt').select(); }
+  else if (a === 'edit') openEdit(p);
+  else if (a === 'del') {
+    if (!confirm('Delete "' + p.name + '"? This also removes its usage history.')) return;
+    const { error } = await supabase.from('products').delete().eq('id', id);
+    if (error) return toast(error.message, { error: true }); toast('Deleted'); load();
   }
-  alert('Product updated successfully!');
-  closeModal();
-  loadProducts();
 });
+$('useForm').addEventListener('submit', (e) => { e.preventDefault(); $('useModal').classList.remove('show'); logUse(usingId, parseInt($('uAmt').value), $('uNote').value.trim()); });
+$('cancelUse').onclick = () => $('useModal').classList.remove('show');
+['q', 'fLab', 'fRisk'].forEach(i => $(i).addEventListener('input', render));
+
+const eLab = $('eLab');
+function toggleOther() { const o = eLab.value === 'Other'; $('editOtherWrap').hidden = !o; $('eOtherLab').required = o; }
+eLab.addEventListener('change', toggleOther);
+function openEdit(p) {
+  editing = p.id;
+  if (STD.includes(p.lab)) { eLab.value = p.lab; $('eOtherLab').value = ''; } else { eLab.value = 'Other'; $('eOtherLab').value = p.lab; }
+  toggleOther();
+  $('eQr').value = p.qr_code || ''; $('eName').value = p.name || ''; $('eDesc').value = p.description || '';
+  $('eQty').value = p.quantity; $('eUnit').value = p.unit === 'units' ? '' : p.unit; $('eLow').value = p.low_stock_level || 0; $('eExp').value = p.expiry_date || '';
+  $('modal').classList.add('show');
+}
+$('cancelEdit').onclick = () => $('modal').classList.remove('show');
+$('editForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const lab = eLab.value === 'Other' ? $('eOtherLab').value.trim() : eLab.value, qty = parseInt($('eQty').value);
+  if (!lab || !(qty >= 0)) return toast('Please fill all required fields', { error: true });
+  const upd = { lab, qr_code: $('eQr').value.trim(), name: $('eName').value.trim(), description: $('eDesc').value.trim(), quantity: qty, expiry_date: $('eExp').value };
+  if (hasRisk) { upd.unit = $('eUnit').value.trim() || 'units'; upd.low_stock_level = parseInt($('eLow').value) || 0; }
+  const { data, error } = await supabase.from('products').update(upd).eq('id', editing).eq('user_id', me.id).select();
+  if (error) return toast(error.message, { error: true });
+  if (!data || !data.length) return toast('Nothing saved. You can only edit your own products.', { error: true });
+  $('modal').classList.remove('show'); toast('Saved'); load();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.ov').forEach(o => o.classList.remove('show')); });
 
 (async () => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) { location.href = 'login.html'; return; }
-  currentUser = user;
-  await loadRole();
-  loadProducts();
+  me = user; await loadRole(); load();
 })();
 </script>
 <script src="mfa-guard.js"></script>
