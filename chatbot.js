@@ -32,6 +32,7 @@
   .ltrow button:disabled{opacity:.6}
   .ltstat{font-size:12px;margin-top:6px;color:#a12a2a}
   @media (max-width:600px){#ltChat{right:8px;bottom:80px;width:calc(100vw - 16px);height:70vh}}
+  @media (max-width:860px){body[data-page] #ltChatBtn{bottom:80px}body[data-page] #ltChat{bottom:146px;height:62vh}}
   `;
   var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 
@@ -51,32 +52,36 @@
     msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight; return d;
   }
   var KB = [
+    { re: /(used 1|log(ging)? usage|usage log|i used|mark.{0,10}used|use up|consum|forecast|run(s|ning)? (out|low)|stock.?out|low stock|reorder|critical|watch\b)/i,
+      a: "Open Stock and tap “Used 1” next to an item whenever you use it (the ⋯ button logs a different amount). Stock goes down instantly, and you can tap Undo within 10 minutes. From your last 14 days of usage Lab Tracker estimates when each item runs out: Critical means out of stock, at its reorder level, or gone within 7 days; Watch means gone within 21 days or likely to expire first. If nothing was logged for 14 days, the item shows “usage not logged lately”." },
+    { re: /(book|reserv|schedul|double.?book|conflict|overdue|return|maintenance|instrument|equipment)/i,
+      a: "Open Equipment from the menu. Tap a free slot on the schedule (or press Book equipment), pick the times and confirm. If the instrument is already booked or under maintenance, the booking is refused and you see when it is free. When you finish, tap Return. Bookings that end without being returned show as overdue. Lab teachers can also add equipment, block time for maintenance and export booking data as CSV." },
+    { re: /(qr|barcode|scan)/i,
+      a: "On Add product, tap Scan next to the Code field to scan a QR code with your phone camera (allow camera permission), or choose a photo of the code. You can also type the code by hand." },
+    { re: /(add|create|new|enter|insert).{0,25}(product|item|chemical|stock)|how.{0,15}add/i,
+      a: "Tap Add product on the dashboard or in Stock. Choose the lab, enter the code (type or scan), name, description, quantity, unit, a reorder level (optional) and the expiry date, then tap Add product." },
+    { re: /(edit|modify|update|change|correct).{0,25}(product|item|quantity|detail|stock)|^modify/i,
+      a: "Open Stock, tap Edit on a product you added, change the details and tap Save. You can edit only your own products." },
+    { re: /(delete|remove).{0,20}(product|item|stock)|^delete/i,
+      a: "Open Stock and tap Delete next to a product you added, then confirm. This also removes its usage history. You can delete only your own products." },
     { re: /(forgot|forget|reset|lost|recover).{0,20}password|password.{0,20}(forgot|forget|reset|lost|recover|change)|(can'?t|cannot|unable to) log ?in/i,
       a: "On the login page tap “Forgot password?”, enter your email and we will send a reset link. Open the link, choose a new password and log in. Check your spam folder if the email does not arrive. If you signed up with Google, you can simply use “Continue with Google”." },
     { re: /(mfa|2fa|two.?step|authenticator|otp|6.?digit)/i,
-      a: "Two-step verification (MFA) is optional. Go to Dashboard → Profile → Enable MFA, scan the QR code with Google Authenticator, Microsoft Authenticator or Authy, and enter the 6-digit code. After that, login asks for a code from the app. If you lose access to the app, contact the developer for help." },
+      a: "Two-step verification (MFA) is optional. Open Profile → Enable MFA, scan the QR code with Google Authenticator, Microsoft Authenticator or Authy, and enter the 6-digit code. After that, login asks for a code from the app. If you lose access to the app, contact the developer for help." },
     { re: /(teacher|id card|designation|staff|verify as)/i,
-      a: "Everyone starts as a Lab Assistant and sees only their own products. To become a Lab Teacher (see all products from your organization), log in with your official college or company email, open the Dashboard and tap “Verify as Lab Teacher”. Enter your name and designation and upload a photo of your staff ID card. It is checked automatically and may need one more check. The ID photo is deleted after the decision." },
+      a: "Everyone starts as a Lab Assistant and sees only their own products. To become a Lab Teacher (see all products from your organization), log in with your official college or company email, open the Dashboard and tap “I'm a teacher: verify”. Enter your name and designation and upload a photo of your staff ID card. It is checked automatically and may need one more check. The ID photo is deleted after the decision." },
     { re: /google/i,
       a: "Tap “Continue with Google” on the login or register page and choose your Google account. If it does not open, allow redirects and try again, or use email and password." },
     { re: /(register|sign ?up|create.{0,10}account|new account|confirm.{0,15}email|confirmation|verification email)/i,
       a: "Tap “Register here” on the login page, enter your email and a password, then open the confirmation email and click the link. You can log in after that. Use your official college or company email to join your organization. Gmail and similar addresses work as personal accounts. If the email does not arrive, check spam." },
-    { re: /(delete|remove).{0,20}(product|item|stock)|^delete/i,
-      a: "Go to Dashboard → View Products and tap Delete next to a product you added, then confirm. You can delete only your own products." },
-    { re: /(edit|modify|update|change|correct).{0,25}(product|item|quantity|detail|stock)|^modify/i,
-      a: "Go to Dashboard → View Products, tap Modify on a product you added, change the details and tap Save. You can edit only your own products." },
-    { re: /(add|create|new|enter|insert).{0,25}(product|item|chemical|stock|equipment)|how.{0,15}add/i,
-      a: "Go to Dashboard → Add Products. Choose the lab (CSE, Physics, Chemistry, or Other and type your lab name), enter the QR code (optional), name, description, quantity and expiry date, then tap Add. If it expires within 7 days you will see an alert." },
     { re: /(expir|remind|alert|notification)/i,
-      a: "When you add a product that expires within 7 days you see an alert. Every morning the system also emails the person who added a product 5 days and 1 day before it expires. Expired products show in red in View Products. Check your spam folder for the first email." },
+      a: "When you add a product that expires within 7 days you see an alert. Every morning the system also emails the person who added a product 5 days and 1 day before it expires. Expired products show in red in Stock, and the dashboard lists anything expiring soon. Check your spam folder for the first email." },
     { re: /(who can see|privacy|private|organi[sz]ation|domain|my data|secure|safe)/i,
       a: "Assistants see only their own products. Lab Teachers see products from people in their own organization (same college or company email domain) and never from other organizations. Different organizations cannot see each other's data." },
     { re: /(profile|photo|picture|avatar|camera|selfie)/i,
-      a: "Open Dashboard → Profile. You can upload a photo or tap Take photo to use your camera, and set your name, job title, lab, phone and employee ID, then tap Save Profile. Allow camera permission when your browser asks." },
+      a: "Open Profile from the menu. You can upload a photo or tap Take photo to use your camera, and set your name, job title, lab, phone and employee ID, then tap Save Profile. Allow camera permission when your browser asks." },
     { re: /(other lab|new lab|lab name|which lab|labs?\b)/i,
       a: "Labs available: CSE Lab, Physics Lab and Chemistry Lab. For any other lab, choose “Other” in the Lab list and type the lab name." },
-    { re: /(qr|barcode|scan)/i,
-      a: "The QR Code field is a text box where you type or paste your item's code. Camera scanning is not available yet." },
     { re: /(free|cost|price|pricing|charge|paid)/i,
       a: "Lab Tracker is free to register and use." },
     { re: /(mobile|laptop|tablet|install|\bapp\b)/i,
@@ -84,11 +89,11 @@
     { re: /(login|log in|sign in|password)/i,
       a: "Enter your email and password on the login page, or tap “Continue with Google”. If you cannot log in: confirm your email first (check the confirmation email), use “Forgot password?” to reset it, and make sure the password has no extra spaces." },
     { re: /(what is|about|purpose|what does)/i,
-      a: "Lab Tracker is a web-based inventory system for labs. Add chemicals, instruments and consumables with quantity and expiry date, get expiry reminder emails, and manage stock for CSE, Physics, Chemistry or your own labs." },
+      a: "Lab Tracker is a web-based inventory system for labs. Add chemicals, instruments and consumables, log usage with one tap, get low-stock and expiry warnings, and book equipment without double bookings." },
     { re: /(error|not working|problem|issue|stuck|fail|broken)/i,
       a: "Sorry about that! Tell me what you were doing and what message you saw. If it keeps happening, tap “Give feedback” below to report it, or contact the developer." },
     { re: /^(hi|hello|hey|hii|good (morning|afternoon|evening))\b/i,
-      a: "Hello! 👋 Ask me how to add, edit or delete products, how reminders work, login help, MFA or teacher verification." }
+      a: "Hello! 👋 Ask me how to log usage, book equipment, add products, how warnings and reminders work, login help, MFA or teacher verification." }
   ];
   function localReply(q) {
     for (var i = 0; i < KB.length; i++) if (KB[i].re.test(q)) return KB[i].a;
@@ -163,7 +168,7 @@
         else if (r.status === 404) aiDown = true;
       } catch (e) { /* fall back below */ }
     }
-    if (!ans) ans = localReply(q) || ("I'm not sure about that one. You can ask about adding or editing products, reminders, login, MFA or teacher verification, or tap “Give feedback”.\n\n" + CONTACT);
+    if (!ans) ans = localReply(q) || ("I'm not sure about that one. You can ask about logging usage, booking equipment, adding products, reminders, login, MFA or teacher verification, or tap “Give feedback”.\n\n" + CONTACT);
     typing.textContent = ans;
     history.push({ role: 'assistant', content: ans });
     msgs.scrollTop = msgs.scrollHeight;
@@ -172,7 +177,7 @@
   function ask(q) { add(q, 'me'); reply(q); }
 
   var chips = box.querySelector('#ltChips');
-  [['Add a product', 'How do I add a product?'], ['Forgot password', 'I forgot my password'], ['Teacher verification', 'How do I verify as a lab teacher?'], ['Give feedback', 'feedback']].forEach(function (c) {
+  [['Log usage', 'How do I log usage?'], ['Book equipment', 'How do I book equipment?'], ['Add a product', 'How do I add a product?'], ['Give feedback', 'feedback']].forEach(function (c) {
     var b = document.createElement('button'); b.type = 'button'; b.textContent = c[0];
     b.onclick = function () { ask(c[1]); };
     chips.appendChild(b);
@@ -180,7 +185,7 @@
 
   btn.onclick = function () {
     box.style.display = box.style.display === 'flex' ? 'none' : 'flex';
-    if (!msgs.children.length) add("Hi! I'm the Lab Tracker assistant. Ask me how to use the site, or tap a button below. Say “contact” for the developer's details.", 'bot');
+    if (!msgs.children.length) add("Hi! I'm the Lab Tracker assistant. Ask me about logging usage, booking equipment, reminders or login, or tap a button below. Say “contact” for the developer's details.", 'bot');
   };
   box.querySelector('#ltClose').onclick = function () { box.style.display = 'none'; };
   box.querySelector('#ltForm').onsubmit = function (e) {
