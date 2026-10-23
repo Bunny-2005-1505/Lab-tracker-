@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -87,6 +88,7 @@
   <label>Lab<select id="aLab"><option>CSE Lab</option><option>Physics Lab</option><option>Chemistry Lab</option><option value="Other">Other (type lab name)</option></select></label>
   <div id="aOtherW" hidden><label>Lab name<input id="aOther"></label></div>
   <label>Asset code (optional)<input id="aCode" placeholder="Tag or serial number"></label>
+  <label>Service or calibration due (optional)<input type="date" id="aService"></label>
   <div class="mact"><button type="button" class="btn" id="aCancel">Cancel</button><button class="btn pri">Add</button></div>
 </form></div>
 
@@ -154,7 +156,7 @@ function statusOf(e) {
 }
 function renderEq() {
   $('eqList').innerHTML = eq.length ? eq.map(e => { const [c, t] = statusOf(e);
-    return `<li><div><div class="t">${esc(e.name)}</div><div class="s">${esc(e.lab)}${e.asset_code ? ' · ' + esc(e.asset_code) : ''}</div></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end"><span class="badge ${c}">${esc(t)}</span><button class="btn sm" data-book="${e.id}">Book</button>${canManage ? `<button class="btn sm" data-maint="${e.id}">Maintenance</button>` : ''}</div></li>`; }).join('')
+    return `<li><div><div class="t">${esc(e.name)}</div><div class="s">${esc(e.lab)}${e.asset_code ? ' · ' + esc(e.asset_code) : ''}${e.service_due ? ' · Service due ' + e.service_due : ''}</div></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end"><span class="badge ${c}">${esc(t)}</span><button class="btn sm" data-book="${e.id}">Book</button>${canManage ? `<button class="btn sm" data-maint="${e.id}">Maintenance</button>` : ''}</div></li>`; }).join('')
     : '<li class="empty"><div><b>No equipment yet</b></div></li>';
 }
 function renderMine() {
@@ -240,7 +242,7 @@ $('aLab').addEventListener('change', () => { const o = $('aLab').value === 'Othe
 $('aForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const lab = $('aLab').value === 'Other' ? $('aOther').value.trim() : $('aLab').value;
-  const { error } = await supabase.from('equipment').insert({ name: $('aName').value.trim(), lab, asset_code: $('aCode').value.trim() || null });
+  const { error } = await supabase.from('equipment').insert({ name: $('aName').value.trim(), lab, asset_code: $('aCode').value.trim() || null, service_due: $('aService').value || null });
   if (error) return toast(error.message, { error: true });
   $('aModal').classList.remove('show'); $('aForm').reset(); toast('Equipment added'); loadAll();
 });
