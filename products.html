@@ -79,6 +79,13 @@ async function load() {
   if (base.error) { toast(base.error.message, { error: true }); return; }
   const rk = {}; if (hasRisk) r.data.forEach(x => rk[x.product_id] = x);
   rows = base.data.map(p => ({ ...p, ...(rk[p.id] || {}), id: p.id, risk: (rk[p.id] || {}).risk || 'ok', unit: p.unit || 'units' }));
+  const t0 = new Date().setHours(0, 0, 0, 0);
+  rows.forEach(p => {            // expiry always counts, even with plenty of stock
+    if (!p.expiry_date) return;
+    const d = Math.round((Date.parse(p.expiry_date + 'T00:00:00') - t0) / 86400000);
+    if (d < 0) { p.risk = 'critical'; p.why = 'Expired ' + (-d) + 'd ago'; }
+    else if (d <= 7 && p.risk !== 'critical') { p.risk = 'watch'; p.why = d === 0 ? 'Expires today' : 'Expires in ' + d + 'd'; }
+  });
   if (isTeacher && rows.length) {
     const ids = [...new Set(rows.map(p => p.user_id))];
     const pr = await supabase.from('profiles').select('id,full_name,email').in('id', ids);
@@ -99,7 +106,7 @@ function render() {
   const today = new Date().setHours(0, 0, 0, 0);
   tb.innerHTML = list.map(p => {
     const mine = p.user_id === me.id, expired = p.expiry_date && Date.parse(p.expiry_date + 'T00:00:00') < today;
-    const why = p.risk === 'critical' ? (p.quantity <= (p.low_stock_level || 0) ? 'Reorder now' : 'Runs out in ~' + p.days_left + 'd') : p.risk === 'watch' ? (p.days_left != null ? 'Low in ~' + p.days_left + 'd' : 'May expire unused') : 'OK';
+    const why = p.why || (p.risk === 'critical' ? (p.quantity <= (p.low_stock_level || 0) ? 'Reorder now' : 'Runs out in ~' + p.days_left + 'd') : p.risk === 'watch' ? (p.days_left != null ? 'Low in ~' + p.days_left + 'd' : 'May expire unused') : 'OK');
     return `<tr data-id="${p.id}">
       <td class="nm" data-l="Name">${esc(p.name)}<div class="sub">${esc(p.qr_code || '')}${p.description ? (p.qr_code ? ' · ' : '') + esc(p.description) : ''}</div></td>
       <td data-l="Lab">${esc(p.lab)}</td>
