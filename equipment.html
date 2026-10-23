@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="robots" content="noindex, nofollow">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Equipment - LabTracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ui.css">
+<style>
+.dayb{display:flex;align-items:center;gap:8px}
+.dayb input{width:auto;margin:0}
+.tl{padding:6px 20px 16px;overflow-x:auto}
+.tl-in{min-width:640px}
+.tl-hrs,.tl-row{display:grid;grid-template-columns:170px 1fr;align-items:center}
+.tl-hrs{padding:10px 0 4px;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.tl-hrs div:last-child{display:flex;justify-content:space-between}
+.tl-row{padding:8px 0;border-top:1px solid var(--line)}
+.tl-nm{font-weight:600;padding-right:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tl-nm small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.track{position:relative;height:38px;border-radius:8px;cursor:pointer;
+  background:repeating-linear-gradient(90deg,#F3F6F7 0,#F3F6F7 calc(100%/14 - 1px),#E3E9EC calc(100%/14 - 1px),#E3E9EC calc(100%/14))}
+.track:hover{outline:2px solid var(--teal-bg)}
+.blk{position:absolute;top:3px;bottom:3px;border-radius:7px;padding:0 8px;font-size:12px;font-weight:600;display:flex;align-items:center;overflow:hidden;white-space:nowrap;background:var(--blue-bg);color:var(--blue);border-left:3px solid var(--blue);cursor:default}
+.blk.maint{background:var(--amber-bg);color:var(--amber);border-color:var(--amber);background-image:repeating-linear-gradient(45deg,transparent 0 6px,rgba(180,83,9,.1) 6px 12px)}
+.blk.late{background:var(--red-bg);color:var(--red);border-color:var(--red)}
+.now{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--red);z-index:2;border-radius:2px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;padding:0 20px 16px;font-size:12.5px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+#bErr{color:var(--red);background:var(--red-bg);border-radius:10px;padding:10px 12px;font-size:14px;margin-top:14px;font-weight:600}
+#bWarn{color:var(--amber);background:var(--amber-bg);border-radius:10px;padding:10px 12px;font-size:14px;margin-top:14px;font-weight:600}
+.seg{display:flex;gap:6px;margin-top:6px}.seg label{margin:0;flex:1}
+.seg input{position:absolute;opacity:0;width:0}.seg span{display:block;text-align:center;padding:10px;border:1px solid #CBD5DB;border-radius:10px;font-weight:600;cursor:pointer}
+.seg input:checked+span{background:var(--teal-bg);border-color:var(--teal);color:var(--teal-d)}
+.seg input:focus-visible+span{outline:3px solid #2DD4BF}
+.alertbox{border-color:#FCA5A5;background:#FFF8F8}
+@media (max-width:860px){.tl-hrs,.tl-row{grid-template-columns:110px 1fr}}
+</style>
+<script src="supabaseClient.js"></script>
+</head>
+<body data-page="equipment">
+<main class="page">
+  <div class="m-top"><img src="logo.png" alt="">Lab Tracker</div>
+  <header class="head">
+    <div><h1>Equipment</h1><p>Reserve instruments for practical sessions. Double bookings are blocked automatically.</p><span class="chip" id="orgChip"></span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" id="btnExport" hidden>Export data (CSV)</button>
+      <button class="btn" id="btnAdd" hidden>+ Add equipment</button>
+      <button class="btn pri" id="btnBook">Book equipment</button>
+    </div>
+  </header>
+
+  <section class="card alertbox" id="overdueCard" hidden style="margin-bottom:16px">
+    <div class="card-h"><h2>Overdue returns</h2><span class="sub">Not marked returned after the booking ended</span></div>
+    <ul class="rows" id="overdueList"></ul>
+  </section>
+
+  <section class="card" style="margin-bottom:16px">
+    <div class="card-h"><h2>Schedule</h2>
+      <div class="dayb"><button class="btn sm" id="prevDay" aria-label="Previous day">‹</button><input type="date" id="day" aria-label="Day"><button class="btn sm" id="nextDay" aria-label="Next day">›</button><button class="btn sm" id="today">Today</button></div></div>
+    <div class="tl"><div class="tl-in" id="tl"><div class="empty">Loading…</div></div></div>
+    <div class="legend"><span><i style="background:var(--blue-bg);border-left:3px solid var(--blue)"></i>Booked</span><span><i style="background:var(--amber-bg);border-left:3px solid var(--amber)"></i>Maintenance</span><span><i style="background:var(--red-bg);border-left:3px solid var(--red)"></i>Overdue</span><span>Tap an empty slot to book it</span></div>
+  </section>
+
+  <div class="grid two">
+    <section class="card"><div class="card-h"><h2>Equipment</h2></div><ul class="rows" id="eqList"></ul></section>
+    <section class="card"><div class="card-h"><h2>My upcoming bookings</h2></div><ul class="rows" id="mine"></ul></section>
+  </div>
+</main>
+
+<div class="ov" id="bModal"><form class="modal" id="bForm">
+  <h3 id="bTitle">Book equipment</h3>
+  <div id="kindWrap" hidden><div class="seg" role="radiogroup" aria-label="Type"><label><input type="radio" name="kind" value="booking" checked><span>Booking</span></label><label><input type="radio" name="kind" value="maintenance"><span>Maintenance</span></label></div></div>
+  <label>Equipment<select id="bEq" required></select></label>
+  <label>Date<input type="date" id="bDate" required></label>
+  <div class="f2"><label>From<input type="time" id="bFrom" required step="900"></label><label>To<input type="time" id="bTo" required step="900"></label></div>
+  <label id="purposeLbl">Purpose<input id="bPurpose" placeholder="e.g. Physics practical, Batch B"></label>
+  <div id="bWarn" hidden></div><div id="bErr" role="alert" hidden></div>
+  <div class="mact"><button type="button" class="btn" id="bCancel">Cancel</button><button class="btn pri" id="bSubmit">Confirm</button></div>
+</form></div>
+
+<div class="ov" id="aModal"><form class="modal" id="aForm">
+  <h3>Add equipment</h3>
+  <label>Name<input id="aName" required placeholder="e.g. Digital oscilloscope"></label>
+  <label>Lab<select id="aLab"><option>CSE Lab</option><option>Physics Lab</option><option>Chemistry Lab</option><option value="Other">Other (type lab name)</option></select></label>
+  <div id="aOtherW" hidden><label>Lab name<input id="aOther"></label></div>
+  <label>Asset code (optional)<input id="aCode" placeholder="Tag or serial number"></label>
+  <div class="mact"><button type="button" class="btn" id="aCancel">Cancel</button><button class="btn pri">Add</button></div>
+</form></div>
+
+<script src="nav.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const H0 = 7, H1 = 21, SPAN = H1 - H0;
+const pad = (n) => String(n).padStart(2, '0');
+const ymd = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const hm = (d) => pad(d.getHours()) + ':' + pad(d.getMinutes());
+const fmtT = (iso) => new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+const fmtH = (iso) => new Date(iso).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
+let me = null, canManage = true, eq = [], bk = [], who = {};
+
+async function loadAll() {
+  const e = await supabase.from('equipment').select('*').order('name');
+  if (e.error) { $('tl').innerHTML = '<div class="empty"><b>Equipment booking is not set up yet</b>Run supabase/002_usage_and_booking.sql in the Supabase SQL editor.</div>'; $('btnBook').disabled = true; return; }
+  eq = e.data;
+  const since = new Date(Date.now() - 30 * 864e5).toISOString();
+  const b = await supabase.from('equipment_bookings').select('*').eq('status', 'active').gte('ends_at', since).order('starts_at').limit(1000);
+  bk = b.data || [];
+  const ids = [...new Set(bk.map(x => x.user_id))];
+  if (ids.length) { const p = await supabase.from('profiles').select('id,full_name,email').in('id', ids);
+    (p.data || []).forEach(x => who[x.id] = x.full_name || (x.email || '').split('@')[0]); }
+  render();
+}
+
+const eqName = (id) => (eq.find(x => x.id === id) || {}).name || '';
+const nameOf = (uid) => uid === me.id ? 'You' : (who[uid] || 'Someone');
+
+function render() { renderOverdue(); renderTimeline(); renderEq(); renderMine(); }
+
+function renderOverdue() {
+  const now = Date.now(), od = bk.filter(x => x.kind === 'booking' && Date.parse(x.ends_at) < now);
+  $('overdueCard').hidden = !od.length;
+  $('overdueList').innerHTML = od.map(x => { const h = Math.floor((now - Date.parse(x.ends_at)) / 36e5);
+    return `<li><div><div class="t">${esc(eqName(x.equipment_id))}</div><div class="s">${esc(nameOf(x.user_id))} · was due ${fmtT(x.ends_at)}${x.purpose ? ' · ' + esc(x.purpose) : ''}</div></div>
+    <div style="display:flex;gap:10px;align-items:center"><span class="badge b-bad">${h < 1 ? '<1' : h}h overdue</span>${x.user_id === me.id || canManage ? `<button class="btn sm" data-ret="${x.id}">Mark returned</button>` : ''}</div></li>`; }).join('');
+}
+
+function renderTimeline() {
+  if (!eq.length) { $('tl').innerHTML = '<div class="empty"><b>No equipment yet</b>' + (canManage ? 'Add your first instrument to start taking bookings.' : 'Ask your lab teacher to add equipment.') + '</div>'; return; }
+  const d0 = new Date($('day').value + 'T00:00:00'), t0 = d0.getTime() + H0 * 36e5, t1 = d0.getTime() + H1 * 36e5, now = Date.now();
+  let h = '<div class="tl-hrs"><div></div><div>' + Array.from({ length: SPAN + 1 }, (_, i) => i % 2 === 0 ? `<span>${pad(H0 + i)}</span>` : '').join('') + '</div></div>';
+  eq.forEach(e => {
+    const blocks = bk.filter(x => x.equipment_id === e.id && Date.parse(x.ends_at) > t0 && Date.parse(x.starts_at) < t1).map(x => {
+      const s = Math.max(Date.parse(x.starts_at), t0), en = Math.min(Date.parse(x.ends_at), t1);
+      const cls = x.kind === 'maintenance' ? 'maint' : (Date.parse(x.ends_at) < now ? 'late' : '');
+      const label = x.kind === 'maintenance' ? 'Maintenance' : nameOf(x.user_id) + (x.purpose ? ' · ' + x.purpose : '');
+      return `<div class="blk ${cls}" style="left:${(s - t0) / (t1 - t0) * 100}%;width:${(en - s) / (t1 - t0) * 100}%" title="${esc(label)}, ${fmtH(x.starts_at)} to ${fmtH(x.ends_at)}">${esc(label)}</div>`; }).join('');
+    const nowLine = now >= t0 && now <= t1 ? `<div class="now" style="left:${(now - t0) / (t1 - t0) * 100}%"></div>` : '';
+    h += `<div class="tl-row"><div class="tl-nm">${esc(e.name)}<small>${esc(e.lab)}</small></div><div class="track" data-eq="${e.id}" role="button" tabindex="0" aria-label="Book ${esc(e.name)}">${blocks}${nowLine}</div></div>`;
+  });
+  $('tl').innerHTML = h;
+}
+
+function statusOf(e) {
+  const now = Date.now(), mine = bk.filter(x => x.equipment_id === e.id);
+  const cur = mine.find(x => Date.parse(x.starts_at) <= now && Date.parse(x.ends_at) > now);
+  if (cur) return cur.kind === 'maintenance' ? ['b-watch', 'Under maintenance until ' + fmtH(cur.ends_at)] : ['b-info', 'In use until ' + fmtH(cur.ends_at)];
+  const late = mine.find(x => x.kind === 'booking' && Date.parse(x.ends_at) < now);
+  if (late) return ['b-bad', 'Return overdue'];
+  const nxt = mine.find(x => Date.parse(x.starts_at) > now);
+  return ['b-ok', nxt ? 'Free · next ' + fmtT(nxt.starts_at) : 'Available'];
+}
+function renderEq() {
+  $('eqList').innerHTML = eq.length ? eq.map(e => { const [c, t] = statusOf(e);
+    return `<li><div><div class="t">${esc(e.name)}</div><div class="s">${esc(e.lab)}${e.asset_code ? ' · ' + esc(e.asset_code) : ''}</div></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end"><span class="badge ${c}">${esc(t)}</span><button class="btn sm" data-book="${e.id}">Book</button>${canManage ? `<button class="btn sm" data-maint="${e.id}">Maintenance</button>` : ''}</div></li>`; }).join('')
+    : '<li class="empty"><div><b>No equipment yet</b></div></li>';
+}
+function renderMine() {
+  const now = Date.now(), m = bk.filter(x => x.user_id === me.id && x.kind === 'booking' && Date.parse(x.ends_at) >= now);
+  $('mine').innerHTML = m.length ? m.map(x => { const started = Date.parse(x.starts_at) <= now;
+    return `<li><div><div class="t">${esc(eqName(x.equipment_id))}</div><div class="s">${fmtT(x.starts_at)} – ${fmtH(x.ends_at)}${x.purpose ? ' · ' + esc(x.purpose) : ''}</div></div>
+    <button class="btn sm ${started ? '' : 'dng'}" ${started ? `data-ret="${x.id}"` : `data-cancel="${x.id}"`}>${started ? 'Return' : 'Cancel'}</button></li>`; }).join('')
+    : '<li class="empty"><div><b>No upcoming bookings</b>Tap an empty slot in the schedule to book.</div></li>';
+}
+
+
+let kind = 'booking';
+function openBook(eqId, date, from, k) {
+  if (!eq.length) return toast('Add equipment first', { error: true });
+  kind = k || 'booking';
+  $('bEq').innerHTML = eq.map(e => `<option value="${e.id}">${esc(e.name)} · ${esc(e.lab)}</option>`).join('');
+  if (eqId) $('bEq').value = eqId;
+  $('bDate').value = date || $('day').value;
+  const f = from || '09:00'; $('bFrom').value = f;
+  $('bTo').value = pad(Math.min(21, parseInt(f) + 2)) + ':' + f.slice(3);
+  $('bPurpose').value = '';
+  $('kindWrap').hidden = !canManage;
+  document.querySelector(`input[name=kind][value=${kind}]`).checked = true;
+  applyKind(); check(); $('bModal').classList.add('show');
+}
+function applyKind() {
+  kind = document.querySelector('input[name=kind]:checked').value;
+  $('bTitle').textContent = kind === 'maintenance' ? 'Schedule maintenance' : 'Book equipment';
+  $('purposeLbl').firstChild.textContent = kind === 'maintenance' ? 'Reason' : 'Purpose';
+  $('bSubmit').textContent = kind === 'maintenance' ? 'Block this time' : 'Confirm booking';
+}
+document.querySelectorAll('input[name=kind]').forEach(r => r.addEventListener('change', () => { applyKind(); check(); }));
+
+function range() { return [new Date($('bDate').value + 'T' + $('bFrom').value), new Date($('bDate').value + 'T' + $('bTo').value)]; }
+function check() {   // instant conflict preview; the database is still the final authority
+  const [s, e] = range(), er = $('bErr'), w = $('bWarn'); er.hidden = w.hidden = true; $('bSubmit').disabled = false;
+  if (isNaN(s) || isNaN(e)) return;
+  if (e <= s) { er.textContent = 'End time must be after start time.'; er.hidden = false; return; }
+  const c = bk.find(x => x.equipment_id === $('bEq').value && Date.parse(x.starts_at) < e && Date.parse(x.ends_at) > s);
+  $('bSubmit').disabled = !!c;
+  if (c) { er.textContent = c.kind === 'maintenance' ? `Under maintenance ${fmtT(c.starts_at)} – ${fmtH(c.ends_at)}. Pick another time.` : `Already booked by ${nameOf(c.user_id).replace('You','you')}, ${fmtT(c.starts_at)} – ${fmtH(c.ends_at)}. Pick another time.`; er.hidden = false; }
+  else if (kind === 'booking' && bk.some(x => x.equipment_id === $('bEq').value && x.kind === 'booking' && Date.parse(x.ends_at) < Date.now() && x.user_id === me.id)) { w.textContent = 'You have an unreturned booking on this equipment. Mark it returned first.'; w.hidden = false; }
+}
+['bEq', 'bDate', 'bFrom', 'bTo'].forEach(i => $(i).addEventListener('input', check));
+$('bCancel').onclick = () => $('bModal').classList.remove('show');
+$('bForm').addEventListener('submit', async (ev) => {
+  ev.preventDefault(); const [s, e] = range(), btn = $('bSubmit');
+  btn.disabled = true;
+  const { data, error: rpcErr } = await supabase.rpc('request_booking', { p_equipment: $('bEq').value, p_start: s.toISOString(), p_end: e.toISOString(), p_purpose: $('bPurpose').value.trim() || null, p_kind: kind });
+  btn.disabled = false;
+  const error = rpcErr || (data && data.ok === false ? { message: 'Conflict: ' + data.message } : null);
+  if (error) { const er = $('bErr'); er.textContent = error.message; er.hidden = false; await loadAll(); return; }
+  $('bModal').classList.remove('show'); toast(kind === 'maintenance' ? 'Maintenance scheduled' : 'Booked'); loadAll();
+});
+
+
+document.body.addEventListener('click', async (e) => {
+  const t = e.target.closest('[data-book],[data-maint],[data-ret],[data-cancel],.track'); if (!t) return;
+  if (t.dataset.book) openBook(t.dataset.book);
+  else if (t.dataset.maint) openBook(t.dataset.maint, null, null, 'maintenance');
+  else if (t.dataset.ret) { const r = await supabase.rpc('mark_returned', { p_booking: t.dataset.ret }); r.error ? toast(r.error.message, { error: true }) : (toast('Marked returned'), loadAll()); }
+  else if (t.dataset.cancel) { if (!confirm('Cancel this booking?')) return; const r = await supabase.rpc('cancel_booking', { p_booking: t.dataset.cancel }); r.error ? toast(r.error.message, { error: true }) : (toast('Booking cancelled'), loadAll()); }
+  else if (t.classList.contains('track') && !e.target.closest('.blk')) {
+    const r = t.getBoundingClientRect(), frac = (e.clientX - r.left) / r.width, mins = Math.round((H0 * 60 + frac * SPAN * 60) / 30) * 30;
+    openBook(t.dataset.eq, null, pad(Math.floor(mins / 60)) + ':' + pad(mins % 60));
+  }
+});
+$('tl').addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('track')) { e.preventDefault(); openBook(e.target.dataset.eq); } });
+$('btnBook').onclick = () => openBook();
+
+
+const setDay = (d) => { $('day').value = ymd(d); renderTimeline(); };
+$('day').value = ymd(new Date());
+$('day').addEventListener('change', renderTimeline);
+$('prevDay').onclick = () => setDay(new Date(new Date($('day').value + 'T00:00:00').getTime() - 864e5));
+$('nextDay').onclick = () => setDay(new Date(new Date($('day').value + 'T00:00:00').getTime() + 864e5));
+$('today').onclick = () => setDay(new Date());
+
+
+$('btnAdd').onclick = () => $('aModal').classList.add('show');
+$('aCancel').onclick = () => $('aModal').classList.remove('show');
+$('aLab').addEventListener('change', () => { const o = $('aLab').value === 'Other'; $('aOtherW').hidden = !o; $('aOther').required = o; });
+$('aForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const lab = $('aLab').value === 'Other' ? $('aOther').value.trim() : $('aLab').value;
+  const { error } = await supabase.from('equipment').insert({ name: $('aName').value.trim(), lab, asset_code: $('aCode').value.trim() || null });
+  if (error) return toast(error.message, { error: true });
+  $('aModal').classList.remove('show'); $('aForm').reset(); toast('Equipment added'); loadAll();
+});
+
+
+$('btnExport').onclick = async () => {
+  const [a, b] = await Promise.all([supabase.from('booking_attempts').select('*').order('created_at'), supabase.from('equipment_bookings').select('*').order('created_at')]);
+  if (a.error || b.error) return toast((a.error || b.error).message, { error: true });
+  const csv = (rows, cols) => [cols.join(',')].concat(rows.map(r => cols.map(c => JSON.stringify(r[c] == null ? '' : r[c])).join(','))).join('\n');
+  const out = '# booking_attempts\n' + csv(a.data, ['created_at', 'equipment_id', 'starts_at', 'ends_at', 'outcome']) + '\n\n# equipment_bookings\n' + csv(b.data, ['created_at', 'equipment_id', 'kind', 'starts_at', 'ends_at', 'status', 'returned_at']);
+  const l = document.createElement('a'); l.href = URL.createObjectURL(new Blob([out], { type: 'text/csv' })); l.download = 'lab-booking-data.csv'; l.click();
+  toast('Exported without names or emails');
+};
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.ov').forEach(o => o.classList.remove('show')); });
+
+(async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) { location.href = 'login.html'; return; }
+  me = user;
+  let m = null; try { m = (await supabase.rpc('my_membership')).data; } catch (e) {}
+  canManage = !m || m.role === 'owner' || m.role === 'teacher';
+  $('orgChip').textContent = m ? m.org_name + (canManage ? ' · Teacher' : ' · Assistant') : 'Personal workspace';
+  $('b
