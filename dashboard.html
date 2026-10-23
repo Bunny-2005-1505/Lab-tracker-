@@ -28,7 +28,7 @@
 
   <section class="grid stats" aria-label="Summary">
     <a class="card stat" href="products.html"><b id="stTotal"><i class="skel">00</i></b><span>Products</span></a>
-    <a class="card stat" id="boxRisk" href="products.html"><b id="stRisk"><i class="skel">00</i></b><span>Running low</span></a>
+    <a class="card stat" id="boxRisk" href="products.html"><b id="stRisk"><i class="skel">00</i></b><span>At risk</span></a>
     <a class="card stat" id="boxExp" href="products.html"><b id="stExp"><i class="skel">00</i></b><span>Expiring in 7 days</span></a>
     <a class="card stat" id="boxOver" href="equipment.html"><b id="stOver"><i class="skel">00</i></b><span>Overdue returns</span></a>
   </section>
@@ -76,16 +76,20 @@ async function loadStock() {
     rows = p.data.map(x => ({ ...x, product_id: x.id, risk: 'ok', unit: 'units', low_stock_level: 0 }));
   } else rows = res.data;
 
-  const risky = rows.filter(r => r.risk !== 'ok');
-  const exp = rows.filter(r => r.expiry_date && dayDiff(r.expiry_date) <= 7);
+  const isExpired = r => r.expiry_date && dayDiff(r.expiry_date) < 0;
+  const risky = rows.filter(r => r.risk !== 'ok' || isExpired(r));
+  const exp = rows.filter(r => r.expiry_date && dayDiff(r.expiry_date) >= 0 && dayDiff(r.expiry_date) <= 7);
   $('stTotal').textContent = rows.length;
   $('stRisk').textContent = risky.length; $('boxRisk').classList.toggle('warn', risky.length > 0);
   $('stExp').textContent = exp.length; $('boxExp').classList.toggle('bad', exp.length > 0);
 
   const items = [];
-  risky.forEach(r => items.push({ k: r.risk === 'critical' ? 0 : 1, r, tag: r.risk, text: riskText(r) }));
+  risky.forEach(r => {
+    if (isExpired(r)) items.push({ k: 0, r, tag: 'critical', text: 'Expired ' + (-dayDiff(r.expiry_date)) + 'd ago' });
+    else items.push({ k: r.risk === 'critical' ? 0 : 1, r, tag: r.risk, text: riskText(r) });
+  });
   exp.forEach(r => { const d = dayDiff(r.expiry_date);
-    items.push({ k: d < 0 ? 0 : 1, r, tag: d < 0 ? 'critical' : 'watch', text: d < 0 ? 'Expired ' + (-d) + 'd ago' : d === 0 ? 'Expires today' : 'Expires in ' + d + 'd' }); });
+    items.push({ k: 1, r, tag: 'watch', text: d === 0 ? 'Expires today' : 'Expires in ' + d + 'd' }); });
   items.sort((a, b) => a.k - b.k);
   const ul = $('attn');
   if (!rows.length) empty(ul, 'No products yet', 'Add your first product to start tracking.');
