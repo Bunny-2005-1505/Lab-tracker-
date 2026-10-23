@@ -5,87 +5,47 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Add Product - LabTracker</title>
-<script src="supabaseClient.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ui.css">
 <style>
-*{box-sizing:border-box}
-body{font-family:Arial,sans-serif;margin:0;padding:20px;min-height:100vh;background:url("Addproduct.png") center/cover fixed}
-.logo{position:absolute;top:10px;right:5%;height:60px}
-h2{text-align:center;font-size:30px;margin:10px 0 20px}
-form{width:50%;margin:0 auto;background:rgba(255,255,255,.85);padding:20px;border-radius:10px}
-label{display:block;font-weight:bold;margin-top:10px}
-input,textarea,select,button{width:100%;margin:6px 0;padding:10px;font-size:16px;border:1px solid #bbb;border-radius:5px}
-button{background:teal;color:#fff;border:none;cursor:pointer}
-button:hover{background:#007770}
-.back{width:50%;display:block;margin:15px auto}
-#otherLabWrap{display:none}
-#msg{color:red;text-align:center;margin-top:10px}
-.qr-row{display:flex;gap:8px;align-items:center}
-.qr-row input{flex:1;min-width:0}
-.scan-btn{width:auto;white-space:nowrap;padding:10px 16px}
-#scanModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;align-items:center;justify-content:center;padding:16px}
-.scan-box{background:#fff;border-radius:10px;padding:16px;width:100%;max-width:420px;max-height:95vh;overflow:auto}
-#qrReader{width:100%}
-#scanMsg{color:#c0392b;font-size:14px;min-height:18px;margin:6px 0}
-.file-label{font-weight:normal;font-size:14px}
-.cancel-btn{background:#7f8c8d}
-.cancel-btn:hover{background:#6c7a7b}
-@media (max-width:700px){
-  body{padding:12px}
-  .logo{height:40px;right:10px;top:8px}
-  h2{font-size:22px;text-align:left;margin-top:44px}
-  form{width:100%;padding:14px}
-  .back{width:100%}
-  input,textarea,select,button{font-size:16px;padding:12px}
-}
+.formcard{max-width:600px;padding:6px 24px 24px}
+.qr-row{display:flex;gap:8px}.qr-row input{flex:1;min-width:0}.qr-row .btn{margin-top:6px}
+#msg{color:var(--red);font-size:14px;min-height:20px;margin-top:10px}
+#scanMsg{color:var(--red);font-size:14px;min-height:18px;margin:6px 0}
 </style>
+<script src="supabaseClient.js"></script>
 </head>
-<body>
-<img class="logo" src="logo.png" alt="logo">
-<h2>Add Product</h2>
-
-<form id="addProductForm">
-  <label>Lab
-    <select id="labSelect">
-      <option value="CSE Lab">CSE Lab</option>
-      <option value="Physics Lab">Physics Lab</option>
-      <option value="Chemistry Lab">Chemistry Lab</option>
-      <option value="Other">Other (type lab name)</option>
-    </select>
-  </label>
-
-  <div id="otherLabWrap">
-    <label>Other Lab Name
-      <input type="text" id="otherLab" placeholder="e.g. Biology Lab">
+<body data-page="products">
+<main class="page">
+  <div class="m-top"><img src="logo.png" alt="">Lab Tracker</div>
+  <header class="head"><div><h1>Add product</h1><p>Scan a code or type the details.</p></div><a class="btn" href="products.html">Back to stock</a></header>
+  <form id="addProductForm" class="card formcard">
+    <label>Lab
+      <select id="labSelect"><option value="CSE Lab">CSE Lab</option><option value="Physics Lab">Physics Lab</option><option value="Chemistry Lab">Chemistry Lab</option><option value="Other">Other (type lab name)</option></select>
     </label>
-  </div>
+    <div id="otherLabWrap" hidden><label>Lab name<input type="text" id="otherLab" placeholder="e.g. Biology Lab"></label></div>
+    <label for="qrCode">Code (scan or type)</label>
+    <div class="qr-row"><input type="text" id="qrCode" placeholder="Enter code or scan"><button type="button" id="scanBtn" class="btn">Scan</button></div>
+    <label>Name<input type="text" id="name" required></label>
+    <label>Description<textarea id="description" rows="2"></textarea></label>
+    <div class="f2"><label>Quantity<input type="number" id="quantity" min="1" required></label><label>Unit<input type="text" id="unit" placeholder="bottles, packs, pieces"></label></div>
+    <div class="f2"><label>Reorder at<input type="number" id="lowStock" min="0" placeholder="0"><span class="hint">Warn me when stock drops to this</span></label><label>Expiry date<input type="date" id="expiryDate" required></label></div>
+    <div id="msg" role="alert"></div>
+    <button class="btn pri" style="width:100%;margin-top:8px">Add product</button>
+  </form>
+</main>
 
-  <label for="qrCode">QR Code (scan or type manually)</label>
-  <div class="qr-row">
-    <input type="text" id="qrCode" placeholder="Enter code or scan">
-    <button type="button" id="scanBtn" class="scan-btn">📷 Scan</button>
-  </div>
-  <label>Name<input type="text" id="name" required></label>
-  <label>Description<textarea id="description"></textarea></label>
-  <label>Quantity<input type="number" id="quantity" min="1" required></label>
-  <label>Expiry Date<input type="date" id="expiryDate" required></label>
-  <button type="submit">Add</button>
-  <div id="msg"></div>
-</form>
+<div class="ov" id="scanModal"><div class="modal">
+  <h3>Scan QR code</h3>
+  <div id="qrReader" style="margin-top:10px"></div>
+  <div id="scanMsg"></div>
+  <label>Or pick a photo of the code<input type="file" id="qrFile" accept="image/*"></label>
+  <div class="mact"><button type="button" id="closeScan" class="btn">Cancel</button></div>
+</div></div>
 
-<button class="back" onclick="location.href='dashboard.html'">Back to Dashboard</button>
-
-<div id="scanModal">
-  <div class="scan-box">
-    <h3 style="margin:0 0 8px">Scan QR Code</h3>
-    <div id="qrReader"></div>
-    <div id="scanMsg"></div>
-    <label class="file-label">Or pick a photo of the QR code
-      <input type="file" id="qrFile" accept="image/*">
-    </label>
-    <button type="button" id="closeScan" class="cancel-btn">Cancel</button>
-  </div>
-</div>
-
+<script src="nav.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
 let currentUser = null;
@@ -99,7 +59,7 @@ const labSelect = document.getElementById('labSelect');
 const otherWrap = document.getElementById('otherLabWrap');
 labSelect.addEventListener('change', () => {
   const isOther = labSelect.value === 'Other';
-  otherWrap.style.display = isOther ? 'block' : 'none';
+  otherWrap.hidden = !isOther;
   document.getElementById('otherLab').required = isOther;
 });
 
@@ -113,7 +73,7 @@ function onScanned(text) {
 }
 
 async function closeScanner() {
-  scanModal.style.display = 'none';
+  scanModal.classList.remove('show');
   if (scanner) {
     try { if (scanner.isScanning) await scanner.stop(); } catch (e) {}
     try { scanner.clear(); } catch (e) {}
@@ -123,7 +83,7 @@ async function closeScanner() {
 
 document.getElementById('scanBtn').addEventListener('click', async () => {
   scanMsg.textContent = '';
-  scanModal.style.display = 'flex';
+  scanModal.classList.add('show');
   if (typeof Html5Qrcode === 'undefined') {
     scanMsg.textContent = 'Scanner could not load. Check your internet connection, or type the code manually.';
     return;
@@ -170,6 +130,8 @@ document.getElementById('addProductForm').addEventListener('submit', async (e) =
   const name = document.getElementById('name').value.trim();
   const description = document.getElementById('description').value.trim();
   const quantity = parseInt(document.getElementById('quantity').value);
+  const unit = document.getElementById('unit').value.trim() || 'units';
+  const lowStock = parseInt(document.getElementById('lowStock').value) || 0;
   const expiryDate = document.getElementById('expiryDate').value;
 
   if (!lab || !name || !(quantity > 0) || !expiryDate) {
@@ -177,28 +139,17 @@ document.getElementById('addProductForm').addEventListener('submit', async (e) =
     return;
   }
 
-  const { error } = await supabase.from('products').insert({
-    user_id: currentUser.id,
-    lab,
-    qr_code: qrCode,
-    name,
-    description,
-    quantity,
-    expiry_date: expiryDate
-  });
-
+  const row = { user_id: currentUser.id, lab, qr_code: qrCode, name, description, quantity, expiry_date: expiryDate };
+  let { error } = await supabase.from('products').insert({ ...row, unit, low_stock_level: lowStock });
+  if (error && /unit|low_stock_level/.test(error.message)) ({ error } = await supabase.from('products').insert(row)); // migration not applied yet
   if (error) { msgEl.textContent = error.message; return; }
 
   msgEl.textContent = '';
-  alert('Product added successfully!');
-
   const diffDays = Math.floor((new Date(expiryDate) - new Date()) / 86400000);
-  if (diffDays >= 0 && diffDays <= 7) {
-    alert(`Alert: Product "${name}" in ${lab} is expiring in ${diffDays} days!`);
-  }
+  toast(diffDays >= 0 && diffDays <= 7 ? `Added. "${name}" expires in ${diffDays} days` : 'Product added');
 
   e.target.reset();
-  otherWrap.style.display = 'none';
+  otherWrap.hidden = true;
 });
 </script>
 <script src="mfa-guard.js"></script>
