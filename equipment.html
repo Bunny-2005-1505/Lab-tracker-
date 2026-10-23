@@ -263,4 +263,11 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') document.que
   let m = null; try { m = (await supabase.rpc('my_membership')).data; } catch (e) {}
   canManage = !m || m.role === 'owner' || m.role === 'teacher';
   $('orgChip').textContent = m ? m.org_name + (canManage ? ' · Teacher' : ' · Assistant') : 'Personal workspace';
-  $('b
+  $('btnAdd').hidden = !canManage; $('btnExport').hidden = !canManage;
+  loadAll(); setInterval(loadAll, 60000);
+})();
+</script>
+<script src="mfa-guard.js"></script>
+<script src="chatbot.js"></script>
+</body>
+</html>
