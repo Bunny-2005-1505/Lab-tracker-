@@ -8,424 +8,131 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ui.css">
 <script src="supabaseClient.js"></script>
-<style>
-*{box-sizing:border-box}
-:root{
-  --bg:#0F1F24;--surface:#ffffff;--ink:#0F1F24;--muted:#64748B;--line:#E2E8F0;
-  --teal:#0D9488;--teal-deep:#0F766E;--amber:#D97706;--amber-edge:#F59E0B;--red:#DC2626;--ok:#059669;
-  --text-bright:#FFFFFF;--text-sub:#94A3B8;--teal-light:#2DD4BF;
-  --card-bg: rgba(15, 31, 36, 0.75);
-  --card-border: rgba(255, 255, 255, 0.15);
-}
-html{-webkit-text-size-adjust:100%}
-body{
-  margin:0;
-  background: 
-    linear-gradient(rgba(15, 31, 36, 0.85), rgba(15, 31, 36, 0.85)), 
-    url('dashboardbackground.jpg') center / cover no-repeat fixed;
-  color:var(--text-bright);
-  font:400 15px/1.5 "Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
-  min-height:100vh;
-}
-a{color:inherit}
-a:focus-visible,button:focus-visible{outline:3px solid #2DD4BF;outline-offset:2px}
-.top{
-  background: #ffffff;
-  border-bottom: 1px solid var(--line);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  width: 100%;
-}
-.top-in{
-  width: 100%;
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 14px 32px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.brand{
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  text-decoration: none;
-  font-weight: 700;
-  font-size: 22px;
-  letter-spacing: -.02em;
-  color: var(--ink);
-}
-.brand img{
-  height: 52px;
-  width: auto;
-  display: block;
-}
-.profile-link{
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  height: 44px;
-  padding: 0 20px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--ink);
-  background: #F8FAFC;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  transition: all 0.2s ease;
-}
-.profile-link:hover{
-  border-color: var(--teal);
-  background: #F1F5F9;
-  transform: translateY(-1px);
-}
-
-/* Dashboard Container Layout */
-.wrap{
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 36px 24px 120px;
-}
-
-/* User Greeting Header */
-.who{
-  margin-bottom: 24px;
-}
-.who h1{
-  margin: 0;
-  font-size: 32px;
-  line-height: 1.2;
-  font-weight: 700;
-  letter-spacing: -.02em;
-  color: var(--text-bright);
-}
-.who .mail{
-  margin: 6px 0 0;
-  color: var(--text-sub);
-  font-size: 15px;
-}
-#orgLine{
-  margin: 8px 0 0;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--teal-light);
-}
-#orgLine:empty{display:none}
-#orgLine a{color:var(--teal-light);font-weight:500;text-underline-offset:3px}
-
-/* Totals Summary Bar */
-.totals{
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  margin: 0 0 20px;
-  background: var(--surface);
-  border-radius: 12px;
-  color: var(--ink);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
-  overflow: hidden;
-}
-.totals a{
-  display: block;
-  padding: 20px 24px;
-  text-decoration: none;
-  color: var(--ink);
-  transition: background 0.15s ease;
-}
-.totals a+a{border-left: 1px solid var(--line)}
-.totals a:hover{background: #F8FAFC}
-.totals b{
-  display: block;
-  font-size: 32px;
-  line-height: 1;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -.02em;
-}
-.totals span{
-  display: block;
-  font-size: 13.5px;
-  line-height: 1.3;
-  color: var(--muted);
-  margin-top: 6px;
-  font-weight: 600;
-}
-.totals .soon.has b{color:var(--amber)}
-.totals .gone.has b{color:var(--red)}
-
-/* Quick Actions */
-.actions{display:grid;gap:12px;margin-bottom:32px}
-.btn-primary{
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  min-height: 52px;
-  border-radius: 10px;
-  background: var(--teal);
-  color: #fff;
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 16px;
-  box-shadow: 0 4px 14px rgba(13,148,136,0.4);
-  transition: all 0.15s ease;
-}
-.btn-primary:hover{
-  background: var(--teal-deep);
-  transform: translateY(-1px);
-}
-.btn-row{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 50px;
-  padding: 0 20px;
-  border-radius: 10px;
-  background: var(--surface);
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 15px;
-  color: var(--ink);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  transition: all 0.15s ease;
-}
-.btn-row:hover{
-  background: #F8FAFC;
-  transform: translateY(-1px);
-}
-h2{margin:0;font-size:20px;line-height:1.3;font-weight:700;letter-spacing:-.01em;color:var(--text-bright)}
-.attn .sub{margin:4px 0 14px;color:var(--text-sub);font-size:14px}
-.list{
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  background: var(--surface);
-  border-radius: 12px;
-  color: var(--ink);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
-  overflow: hidden;
-}
-.list li{
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 16px 20px;
-  border-left: 6px solid var(--edge,var(--line));
-}
-.list li+li{border-top: 1px solid var(--line)}
-.list .nm{font-weight:700;overflow-wrap:anywhere;font-size:16px}
-.list .mt{font-size:13.5px;color:var(--muted);margin-top:2px}
-.list .st{text-align:right;flex:none;font-size:14px;font-weight:700;color:var(--tone,var(--ink))}
-.list .st small{display:block;font-weight:500;color:var(--muted);font-size:13px;margin-top:2px}
-.list li.expired{--edge:var(--red);--tone:var(--red)}
-.list li.soon{--edge:var(--amber-edge);--tone:var(--amber)}
-.list .none{display:block;border-left-color:var(--ok);padding:18px 20px;color:var(--muted)}
-.list .none b{color:var(--ink)}
-.more{display:inline-block;margin-top:14px;font-weight:600;color:var(--teal-light);font-size:15px;text-underline-offset:3px}
-.about{
-  margin-top: 40px;
-  padding: 28px;
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 14px;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-}
-.about h2{color:var(--text-bright)}
-.about p{margin:8px 0 0;max-width:64ch;color:var(--text-sub);line-height:1.6;font-size:15px}
-.about dl{margin:20px 0 0;display:grid;gap:16px}
-.about dt{font-weight:700;font-size:15px;color:var(--text-bright)}
-.about dd{margin:3px 0 0;color:var(--text-sub);font-size:14px;max-width:64ch;line-height:1.5}
-.contact{
-  margin-top: 36px;
-  padding-top: 20px;
-  border-top: 1px solid var(--card-border);
-  font-size: 14px;
-  color: var(--text-sub);
-}
-.contact a{color:var(--teal-light);font-weight:600;text-underline-offset:2px}
-#adminLink{display:none;margin-top:10px;font-weight:600;color:var(--teal-light)}
-
-@media (min-width:760px){
-  .wrap{padding-top:44px}
-  .about dl{grid-template-columns: 1fr 1fr; gap: 20px 32px}
-}
-</style>
 </head>
-<body>
-<header class="top">
-  <div class="top-in">
-    <a class="brand" href="dashboard.html">
-      <img src="logo.png" alt="Lab Tracker Logo">
-      <span>Lab Tracker</span>
-    </a>
-    <a class="profile-link" href="profile.html">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7"/></svg>
-      Profile
-    </a>
-  </div>
-</header>
-
-<main class="wrap">
-  <section class="who">
-    <h1 id="usernameDisplay">&nbsp;</h1>
-    <p class="mail" id="emailDisplay"></p>
-    <p id="orgLine"></p>
-  </section>
-
-  <section class="totals" aria-label="Inventory summary">
-    <a href="products.html"><b id="stTotal">-</b><span>Products</span></a>
-    <a href="products.html" class="soon" id="soonBox"><b id="stSoon">-</b><span>Expiring soon</span></a>
-    <a href="products.html" class="gone" id="goneBox"><b id="stExpired">-</b><span>Expired</span></a>
-  </section>
-
-  <div class="actions">
-    <a class="btn-primary" href="addproduct.html">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+<body data-page="dashboard">
+<main class="page">
+  <div class="m-top"><img src="logo.png" alt="">Lab Tracker</div>
+  <header class="head">
+    <div>
+      <h1 id="usernameDisplay">&nbsp;</h1>
+      <p id="emailDisplay"></p>
+      <span class="chip" id="orgLine"></span>
+    </div>
+    <a class="btn pri" href="addproduct.html">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
       Add product
     </a>
-    <a class="btn-row" href="products.html">View all products
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
-    </a>
+  </header>
+
+  <section class="grid stats" aria-label="Summary">
+    <a class="card stat" href="products.html"><b id="stTotal"><i class="skel">00</i></b><span>Products</span></a>
+    <a class="card stat" id="boxRisk" href="products.html"><b id="stRisk"><i class="skel">00</i></b><span>Running low</span></a>
+    <a class="card stat" id="boxExp" href="products.html"><b id="stExp"><i class="skel">00</i></b><span>Expiring in 7 days</span></a>
+    <a class="card stat" id="boxOver" href="equipment.html"><b id="stOver"><i class="skel">00</i></b><span>Overdue returns</span></a>
+  </section>
+
+  <div class="grid two">
+    <section class="card">
+      <div class="card-h"><h2>Needs attention</h2><a href="products.html">All stock</a></div>
+      <ul class="rows" id="attn"><li class="empty">Loading…</li></ul>
+    </section>
+    <section class="card">
+      <div class="card-h"><h2>Equipment</h2><a href="equipment.html">Book equipment</a></div>
+      <ul class="rows" id="equip"><li class="empty">Loading…</li></ul>
+    </section>
   </div>
 
-  <section class="attn">
-    <h2>Needs attention</h2>
-    <p class="sub" id="attnSub">Loading your products</p>
-    <ul class="list" id="attnList" hidden></ul>
-    <a class="more" id="attnMore" href="products.html" hidden>See all products</a>
+  <section class="card" style="margin-top:16px">
+    <div class="card-h"><h2>Quick log</h2><span class="sub">Tap when you use something. It keeps stock and forecasts accurate.</span></div>
+    <ul class="rows" id="quick"><li class="empty">Loading…</li></ul>
   </section>
 
-  <section class="about">
-    <h2>About Lab Tracker</h2>
-    <p>Lab Tracker keeps a lab's chemicals and equipment in one list, with quantities and expiry dates, so stock is easy to check and nothing expires unnoticed.</p>
-    <dl>
-      <div><dt>Adding products</dt><dd>Type a product's code, or scan its QR code with your phone camera.</dd></div>
-      <div><dt>Expiry reminders</dt><dd>You get an email 5 days and 1 day before a product expires.</dd></div>
-      <div><dt>Lab assistants</dt><dd>See and manage the products they add themselves.</dd></div>
-      <div><dt>Teachers</dt><dd>See every product in their college. Teachers are verified with their college email and a photo of their ID card, which is deleted once the decision is made.</dd></div>
-    </dl>
-  </section>
-
-  <section class="contact">
-    Questions or problems? <a href="mailto:hemanthkumarpinnu@gmail.com">hemanthkumarpinnu@gmail.com</a> or <a href="tel:+919177843853">+91 9177843853</a>
-    <br><a id="adminLink" href="admin.html">Review teacher requests</a>
-  </section>
+  <p class="sub" style="margin-top:28px">Questions? <a href="mailto:hemanthkumarpinnu@gmail.com">hemanthkumarpinnu@gmail.com</a> · <a href="tel:+919177843853">+91 9177843853</a> · <a id="adminLink" href="admin.html" style="display:none">Review teacher requests</a></p>
 </main>
 
+<script src="nav.js"></script>
 <script>
-const cap = (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
-const isoDay = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-const dayNum = (iso) => Math.round(Date.parse(iso + 'T00:00:00Z') / 86400000);
-const fmtDate = (iso) => new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-const plural = (n, w) => n + ' ' + w + (n === 1 ? '' : 's');
 const $ = (id) => document.getElementById(id);
+const cap = (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+const fmtT = (iso) => new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+const dayDiff = (iso) => Math.round((Date.parse(iso + 'T00:00:00') - new Date().setHours(0, 0, 0, 0)) / 86400000);
+const empty = (ul, title, text) => { ul.innerHTML = `<li class="empty"><div><b>${esc(title)}</b>${esc(text)}</div></li>`; };
 
-function statusFor(p, todayN) {
-  const left = dayNum(p.expiry_date) - todayN;
-  if (left < 0) return { kind: 'expired', text: 'Expired ' + plural(-left, 'day') + ' ago', left };
-  if (left === 0) return { kind: 'soon', text: 'Expires today', left };
-  if (left === 1) return { kind: 'soon', text: 'Expires tomorrow', left };
-  return { kind: 'soon', text: 'Expires in ' + left + ' days', left };
+function riskText(r) {
+  if (r.quantity <= 0) return 'Out of stock';
+  if (r.quantity <= (r.low_stock_level || 0)) return 'Below minimum (' + r.low_stock_level + ')';
+  if (r.days_left != null) return 'Runs out in ~' + r.days_left + ' day' + (r.days_left === 1 ? '' : 's');
+  return 'Expires before it is used up';
 }
 
-function renderAttention(items) {
-  const todayN = dayNum(isoDay(new Date()));
-  const flagged = items
-    .filter(p => p.expiry_date)
-    .map(p => ({ p, s: statusFor(p, todayN) }))
-    .filter(x => x.s.left <= 7)
-    .sort((a, b) => a.s.left - b.s.left);
+async function loadStock() {
+  let res = await supabase.from('product_risk').select('*');
+  let rows;
+  if (res.error) {            // migration not applied yet: fall back to the plain table
+    const p = await supabase.from('products').select('id,name,lab,quantity,expiry_date');
+    if (p.error) { empty($('attn'), 'Could not load stock', 'Refresh to try again.'); return; }
+    rows = p.data.map(x => ({ ...x, product_id: x.id, risk: 'ok', unit: 'units', low_stock_level: 0 }));
+  } else rows = res.data;
 
-  const list = $('attnList');
-  list.innerHTML = '';
-  list.hidden = false;
+  const risky = rows.filter(r => r.risk !== 'ok');
+  const exp = rows.filter(r => r.expiry_date && dayDiff(r.expiry_date) <= 7);
+  $('stTotal').textContent = rows.length;
+  $('stRisk').textContent = risky.length; $('boxRisk').classList.toggle('warn', risky.length > 0);
+  $('stExp').textContent = exp.length; $('boxExp').classList.toggle('bad', exp.length > 0);
 
-  if (!items.length) {
-    $('attnSub').textContent = 'Nothing to track yet.';
-    const li = document.createElement('li');
-    li.className = 'none';
-    const b = document.createElement('b');
-    b.textContent = 'No products yet. ';
-    li.append(b, 'Add your first product to start tracking quantities and expiry dates.');
-    list.append(li);
-    return;
-  }
+  const items = [];
+  risky.forEach(r => items.push({ k: r.risk === 'critical' ? 0 : 1, r, tag: r.risk, text: riskText(r) }));
+  exp.forEach(r => { const d = dayDiff(r.expiry_date);
+    items.push({ k: d < 0 ? 0 : 1, r, tag: d < 0 ? 'critical' : 'watch', text: d < 0 ? 'Expired ' + (-d) + 'd ago' : d === 0 ? 'Expires today' : 'Expires in ' + d + 'd' }); });
+  items.sort((a, b) => a.k - b.k);
+  const ul = $('attn');
+  if (!rows.length) empty(ul, 'No products yet', 'Add your first product to start tracking.');
+  else if (!items.length) empty(ul, 'All clear', 'Nothing is running low or expiring this week.');
+  else ul.innerHTML = items.slice(0, 6).map(i => `<li><div><div class="t">${esc(i.r.name)}</div><div class="s">${esc(i.r.lab)} · ${i.r.quantity} ${esc(i.r.unit || 'units')}${i.r.stale ? ' · usage not logged lately' : ''}</div></div><span class="badge b-${i.tag}">${esc(i.text)}</span></li>`).join('');
 
-  if (!flagged.length) {
-    $('attnSub').textContent = 'Expired products and those expiring within 7 days appear here.';
-    const li = document.createElement('li');
-    li.className = 'none';
-    const b = document.createElement('b');
-    b.textContent = 'All clear. ';
-    li.append(b, 'Nothing has expired and nothing expires this week.');
-    list.append(li);
-    return;
-  }
+  const q = $('quick');
+  const top = rows.filter(r => r.quantity > 0).sort((a, b) => (b.used_14d || 0) - (a.used_14d || 0)).slice(0, 5);
+  if (!top.length) empty(q, 'Nothing to log', 'Products with stock appear here.');
+  else { q.innerHTML = top.map(r => `<li><div><div class="t">${esc(r.name)}</div><div class="s">${esc(r.lab)} · <span data-q="${r.product_id}">${r.quantity}</span> ${esc(r.unit || 'units')} left</div></div><button class="btn sm use" data-id="${r.product_id}">Used 1</button></li>`).join('');
+    q.onclick = async (e) => { const b = e.target.closest('.use'); if (!b) return; b.disabled = true;
+      const { data, error } = await supabase.rpc('log_usage', { p_product: b.dataset.id, p_amount: 1 });
+      b.disabled = false;
+      if (error) return toast(error.message, { error: true });
+      q.querySelector(`[data-q="${b.dataset.id}"]`).textContent = data; toast('Logged. ' + data + ' left'); }; }
+}
 
-  $('attnSub').textContent = 'Expired, or expiring within 7 days. Earliest first.';
-  flagged.slice(0, 8).forEach(({ p, s }) => {
-    const li = document.createElement('li');
-    li.className = s.kind;
-    const left = document.createElement('div');
-    const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = p.name || 'Unnamed product';
-    const mt = document.createElement('div'); mt.className = 'mt';
-    mt.textContent = [p.lab, p.quantity != null ? 'Quantity ' + p.quantity : ''].filter(Boolean).join(', ');
-    left.append(nm, mt);
-    const right = document.createElement('div'); right.className = 'st';
-    right.textContent = s.text;
-    const d = document.createElement('small'); d.textContent = fmtDate(p.expiry_date);
-    right.append(d);
-    li.append(left, right);
-    list.append(li);
-  });
-  if (flagged.length > 8) {
-    $('attnMore').hidden = false;
-    $('attnMore').textContent = 'See all ' + flagged.length + ' in View all products';
-  }
+async function loadEquipment() {
+  const ul = $('equip');
+  const [o, b] = await Promise.all([
+    supabase.from('overdue_returns').select('*').order('ends_at'),
+    supabase.from('equipment_bookings').select('id,kind,starts_at,ends_at,purpose,equipment(name,lab)').eq('status', 'active')
+      .gte('ends_at', new Date().toISOString()).lte('starts_at', new Date(Date.now() + 2 * 864e5).toISOString()).order('starts_at').limit(6)
+  ]);
+  if (o.error || b.error) { $('stOver').textContent = '0'; empty(ul, 'Equipment booking not set up', 'Run the database migration to enable it.'); return; }
+  $('stOver').textContent = o.data.length; $('boxOver').classList.toggle('bad', o.data.length > 0);
+  const html = [];
+  o.data.slice(0, 3).forEach(x => html.push(`<li><div><div class="t">${esc(x.equipment)}</div><div class="s">${esc(x.lab)} · due ${fmtT(x.ends_at)}</div></div><span class="badge b-bad">${x.hours_overdue}h overdue</span></li>`));
+  b.data.forEach(x => html.push(`<li><div><div class="t">${esc(x.equipment ? x.equipment.name : '')}</div><div class="s">${fmtT(x.starts_at)} – ${fmtT(x.ends_at)}</div></div>${x.kind === 'maintenance' ? '<span class="badge b-watch">Maintenance</span>' : '<span class="badge b-info">Booked</span>'}</li>`));
+  if (html.length) ul.innerHTML = html.slice(0, 6).join(''); else empty(ul, 'Nothing scheduled', 'No bookings or maintenance in the next 2 days.');
 }
 
 (async () => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) { location.href = 'login.html'; return; }
-
   $('emailDisplay').textContent = user.email;
   const prof = await supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle();
   let name = (prof.data && prof.data.full_name) || (user.user_metadata && user.user_metadata.full_name) || '';
   name = name.split(/\s+/).filter(w => w && !/\d/.test(w)).map(cap).join(' ');
   if (!name) name = cap((user.email.split('@')[0].split(/[._\d]/)[0]) || 'there');
-  $('usernameDisplay').textContent = name;
-
-  const res = await supabase.from('products').select('name,lab,quantity,expiry_date');
-  if (res.error || !res.data) {
-    $('attnSub').textContent = 'Could not load your products. Refresh the page to try again.';
-  } else {
-    const items = res.data;
-    const todayN = dayNum(isoDay(new Date()));
-    const dated = items.filter(p => p.expiry_date).map(p => dayNum(p.expiry_date) - todayN);
-    const soon = dated.filter(n => n >= 0 && n <= 7).length;
-    const gone = dated.filter(n => n < 0).length;
-    $('stTotal').textContent = items.length;
-    $('stSoon').textContent = soon;
-    $('stExpired').textContent = gone;
-    if (soon) $('soonBox').classList.add('has');
-    if (gone) $('goneBox').classList.add('has');
-    renderAttention(items);
-  }
-
+  $('usernameDisplay').textContent = 'Hello, ' + name;
+  loadStock(); loadEquipment();
   try {
     const { data: { session } } = await supabase.auth.getSession();
-    const r = await fetch('/api/admin-verifications', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
-      body: JSON.stringify({ action: 'whoami' })
-    });
-    if (r.ok) $('adminLink').style.display = 'inline-block';
+    const r = await fetch('/api/admin-verifications', { method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token }, body: JSON.stringify({ action: 'whoami' }) });
+    if (r.ok) $('adminLink').style.display = 'inline';
   } catch (e) {}
 })();
 </script>
