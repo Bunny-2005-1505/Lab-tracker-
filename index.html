@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lab Tracker: Lab Inventory Management System for Colleges and Labs</title>
-<meta name="description" content="Lab Tracker is a free web app to track lab chemicals, instruments and consumables, get expiry reminder emails, and manage CSE, Physics and Chemistry lab stock.">
+<meta name="description" content="Lab Tracker is a free web app for college labs: one-tap usage logging, low-stock and expiry alerts, and equipment booking that blocks double bookings.">
 <link rel="canonical" href="https://lab-tracker.vercel.app/">
 <meta name="robots" content="index, follow">
 <link rel="icon" type="image/png" href="logo.png">
@@ -16,7 +16,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Lab Tracker">
 <meta property="og:title" content="Lab Tracker: Lab Inventory Management System">
-<meta property="og:description" content="Track lab chemicals, instruments and consumables. Expiry reminders by email, teacher verification and secure login.">
+<meta property="og:description" content="One-tap usage logging, stock-out warnings, expiry reminders and conflict-free equipment booking for college labs.">
 <meta property="og:url" content="https://lab-tracker.vercel.app/">
 <meta property="og:image" content="https://lab-tracker.vercel.app/logo.png">
 <meta name="twitter:card" content="summary">
@@ -29,7 +29,7 @@
   "url": "https://lab-tracker.vercel.app/",
   "applicationCategory": "BusinessApplication",
   "operatingSystem": "Any (web browser)",
-  "description": "Web-based inventory management system for laboratories to track chemicals, instruments and consumables with expiry reminders.",
+  "description": "Web-based lab inventory and equipment booking system: usage logging, low-stock and expiry alerts, and double-booking prevention.",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "INR" },
   "author": { "@type": "Person", "name": "Hemanth Kumar Pinnu" }
 }
@@ -87,8 +87,8 @@ footer a{color:#9fe}
 
 <main>
   <div class="hero">
-    <h1>Lab Inventory Management System</h1>
-    <p>Track chemicals, instruments and consumables across your college or company labs. Get expiry reminders by email, and keep every lab's stock in one secure place.</p>
+    <h1>Lab Inventory and Equipment Booking</h1>
+    <p>Log usage with one tap, get warned before stock runs out or expires, and book instruments without double bookings. Built for college and company labs.</p>
     <a class="btn fill" id="heroBtn" href="register.html">Get started free</a>
     <a class="btn" href="#features">See features</a>
   </div>
@@ -96,12 +96,15 @@ footer a{color:#9fe}
   <section id="features">
     <h2>What Lab Tracker does</h2>
     <div class="grid">
-      <div class="card"><h3>Track lab stock</h3><p>Add products with name, quantity, description, QR code and expiry date. Edit or delete them anytime.</p></div>
-      <div class="card"><h3>Many labs</h3><p>Organize items by CSE Lab, Physics Lab, Chemistry Lab, or add your own lab name.</p></div>
-      <div class="card"><h3>Expiry reminder emails</h3><p>Automatic email reminders 5 days and 1 day before a product expires, so nothing is wasted.</p></div>
-      <div class="card"><h3>Organization access</h3><p>Staff join with their college or company email. Verified lab teachers see their organization's products, and assistants see their own.</p></div>
+      <div class="card"><h3>One-tap usage log</h3><p>Tap "Used 1" next to any item. Stock updates instantly, and a mis-tap can be undone within 10 minutes.</p></div>
+      <div class="card"><h3>Stock-out warnings</h3><p>Lab Tracker learns how fast each item is used and shows when it will run out, so you can reorder in time.</p></div>
+      <div class="card"><h3>Expiry reminder emails</h3><p>Automatic emails 5 days and 1 day before a product expires, so nothing is wasted.</p></div>
+      <div class="card"><h3>Equipment booking</h3><p>Teachers reserve instruments for practical sessions. Overlapping bookings are blocked automatically.</p></div>
+      <div class="card"><h3>Maintenance and returns</h3><p>Mark equipment as under maintenance, and see overdue returns at a glance on your dashboard.</p></div>
+      <div class="card"><h3>Many labs</h3><p>CSE Lab, Physics Lab, Chemistry Lab, or add your own lab name. Add items by typing or scanning a QR code.</p></div>
+      <div class="card"><h3>Organization access</h3><p>Staff join with a college or company email. Verified lab teachers see their organization's stock and equipment; assistants see their own.</p></div>
       <div class="card"><h3>Secure login</h3><p>Sign in with email or Google, and turn on two-step verification (MFA) for extra protection.</p></div>
-      <div class="card"><h3>Works on phone and laptop</h3><p>A layout made for small screens and large screens, plus a built-in chat assistant for help.</p></div>
+      <div class="card"><h3>Works on phone and laptop</h3><p>A clean layout for small and large screens, plus a built-in chat assistant for help.</p></div>
     </div>
   </section>
 
@@ -109,9 +112,10 @@ footer a{color:#9fe}
     <h2>How it works</h2>
     <ol class="steps">
       <li><b>Register</b> with your college or company email and confirm it.</li>
-      <li><b>Add your lab products</b> with quantity and expiry date.</li>
-      <li><b>Get reminders</b> by email before items expire.</li>
-      <li><b>Lab teachers</b> verify their role to view all products in their organization.</li>
+      <li><b>Add your lab products</b> with quantity, unit, expiry date and a reorder level.</li>
+      <li><b>Tap "Used 1"</b> whenever something is used. It takes one second.</li>
+      <li><b>Get warned</b> before items run out or expire, by dashboard alerts and email.</li>
+      <li><b>Book equipment</b> for practical sessions. Lab teachers can also block time for maintenance.</li>
     </ol>
   </section>
 
@@ -121,6 +125,9 @@ footer a{color:#9fe}
     <details><summary>Is Lab Tracker free?</summary><p>Yes, you can register and use it for free.</p></details>
     <details><summary>Who can see my products?</summary><p>Lab assistants see only their own products. Verified lab teachers can also see the products of people from the same organization. Different organizations cannot see each other's data.</p></details>
     <details><summary>How do I become a lab teacher?</summary><p>Log in with your official college or company email, open the dashboard and choose Verify as Lab Teacher. You will be asked for your designation and a photo of your staff ID card.</p></details>
+    <details><summary>How does the stock-out warning work?</summary><p>Each time you tap "Used 1", Lab Tracker records it. From the last 14 days of usage it estimates how many days are left. Items are marked Critical if they are out of stock, at their reorder level, or will run out within 7 days, and Watch if they will run out within 21 days. If an item has not been logged for 14 days, it is flagged because the estimate may be wrong.</p></details>
+    <details><summary>How does equipment booking work?</summary><p>Open Equipment, tap a free time slot, choose your times and confirm. If someone already booked that instrument, or it is under maintenance, the booking is refused and you are shown when it is free. Bookings that end without being marked returned appear as overdue returns.</p></details>
+    <details><summary>Who can add equipment or schedule maintenance?</summary><p>Verified lab teachers can add equipment, schedule maintenance and export booking data. Lab assistants can book equipment and manage their own bookings.</p></details>
     <details><summary>How do expiry reminders work?</summary><p>Every morning the system checks for products expiring in 5 days or 1 day and emails the person who added them.</p></details>
   </section>
 </main>
@@ -151,5 +158,6 @@ footer a{color:#9fe}
   } catch (e) {}
 })();
 </script>
+<script src="chatbot.js"></script>
 </body>
 </html>
