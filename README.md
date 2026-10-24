@@ -44,12 +44,11 @@ Teaching laboratories often use paper registers or spreadsheets. This leads to u
 
 ## Screenshots
 
-<!-- Add screenshots to a docs/screenshots folder, then replace these lines:
+
 ![Dashboard](docs/screenshots/dashboard.png)
 ![Stock](docs/screenshots/stock.png)
 ![Equipment](docs/screenshots/equipment.png)
 ![Profile](docs/screenshots/profile.png)
--->
 
 ## Architecture
 
