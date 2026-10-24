@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="ui.css">
 <style>
+[hidden]{display:none!important}
 .dayb{display:flex;align-items:center;gap:8px}
 .dayb input{width:auto;margin:0}
 .tl{padding:6px 20px 16px;overflow-x:auto}
@@ -39,6 +39,12 @@
 .alertbox{border-color:#FCA5A5;background:#FFF8F8}
 @media (max-width:860px){.tl-hrs,.tl-row{grid-template-columns:110px 1fr}}
 </style>
+<script>
+/* Shows any script error on the page instead of failing silently. */
+function showErr(m){var t=document.getElementById('tl');if(t)t.innerHTML='<div class="empty"><b>Page error</b>'+String(m).replace(/</g,'&lt;')+'</div>';}
+window.addEventListener('error',function(e){showErr(e.message+' (line '+e.lineno+')');});
+window.addEventListener('unhandledrejection',function(e){showErr((e.reason&&e.reason.message)||e.reason);});
+</script>
 <script src="supabaseClient.js"></script>
 </head>
 <body data-page="equipment">
@@ -94,25 +100,33 @@
 
 <script src="nav.js"></script>
 <script>
+/* Everything is inside one function so names here can never clash with names in other scripts. */
+(function () {
 const $ = (id) => document.getElementById(id);
 const H0 = 7, H1 = 21, SPAN = H1 - H0;
 const pad = (n) => String(n).padStart(2, '0');
 const ymd = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
-const hm = (d) => pad(d.getHours()) + ':' + pad(d.getMinutes());
 const fmtT = (iso) => new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
 const fmtH = (iso) => new Date(iso).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
 let me = null, canManage = true, eq = [], bk = [], who = {};
 
 async function loadAll() {
   const e = await supabase.from('equipment').select('*').order('name');
-  if (e.error) { $('tl').innerHTML = '<div class="empty"><b>Equipment booking is not set up yet</b>Run supabase/002_usage_and_booking.sql in the Supabase SQL editor.</div>'; $('btnBook').disabled = true; return; }
-  eq = e.data;
+  if (e.error) {
+    $('tl').innerHTML = '<div class="empty"><b>Could not load equipment</b>' + esc(e.error.message) + '<br>If the table is missing, run supabase/002_usage_and_booking.sql in the Supabase SQL editor.</div>';
+    $('btnBook').disabled = true; return;
+  }
+  $('btnBook').disabled = false;
+  eq = e.data || [];
   const since = new Date(Date.now() - 30 * 864e5).toISOString();
   const b = await supabase.from('equipment_bookings').select('*').eq('status', 'active').gte('ends_at', since).order('starts_at').limit(1000);
+  if (b.error) { toast(b.error.message, { error: true }); }
   bk = b.data || [];
   const ids = [...new Set(bk.map(x => x.user_id))];
-  if (ids.length) { const p = await supabase.from('profiles').select('id,full_name,email').in('id', ids);
-    (p.data || []).forEach(x => who[x.id] = x.full_name || (x.email || '').split('@')[0]); }
+  if (ids.length) {
+    const p = await supabase.from('profiles').select('id,full_name,email').in('id', ids);
+    (p.data || []).forEach(x => who[x.id] = x.full_name || (x.email || '').split('@')[0]);
+  }
   render();
 }
 
@@ -156,7 +170,7 @@ function statusOf(e) {
 }
 function renderEq() {
   $('eqList').innerHTML = eq.length ? eq.map(e => { const [c, t] = statusOf(e);
-    return `<li><div><div class="t">${esc(e.name)}</div><div class="s">${esc(e.lab)}${e.asset_code ? ' · ' + esc(e.asset_code) : ''}${e.service_due ? ' · Service due ' + e.service_due : ''}</div></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end"><span class="badge ${c}">${esc(t)}</span><button class="btn sm" data-book="${e.id}">Book</button>${canManage ? `<button class="btn sm" data-maint="${e.id}">Maintenance</button>` : ''}</div></li>`; }).join('')
+    return `<li><div><div class="t">${esc(e.name)}</div><div class="s">${esc(e.lab)}${e.asset_code ? ' · ' + esc(e.asset_code) : ''}${e.service_due ? ' · Service due ' + esc(e.service_due) : ''}</div></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end"><span class="badge ${c}">${esc(t)}</span><button class="btn sm" data-book="${e.id}">Book</button>${canManage ? `<button class="btn sm" data-maint="${e.id}">Maintenance</button>` : ''}</div></li>`; }).join('')
     : '<li class="empty"><div><b>No equipment yet</b></div></li>';
 }
 function renderMine() {
@@ -166,7 +180,6 @@ function renderMine() {
     <button class="btn sm ${started ? '' : 'dng'}" ${started ? `data-ret="${x.id}"` : `data-cancel="${x.id}"`}>${started ? 'Return' : 'Cancel'}</button></li>`; }).join('')
     : '<li class="empty"><div><b>No upcoming bookings</b>Tap an empty slot in the schedule to book.</div></li>';
 }
-
 
 let kind = 'booking';
 function openBook(eqId, date, from, k) {
@@ -212,7 +225,6 @@ $('bForm').addEventListener('submit', async (ev) => {
   $('bModal').classList.remove('show'); toast(kind === 'maintenance' ? 'Maintenance scheduled' : 'Booked'); loadAll();
 });
 
-
 document.body.addEventListener('click', async (e) => {
   const t = e.target.closest('[data-book],[data-maint],[data-ret],[data-cancel],.track'); if (!t) return;
   if (t.dataset.book) openBook(t.dataset.book);
@@ -227,7 +239,6 @@ document.body.addEventListener('click', async (e) => {
 $('tl').addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('track')) { e.preventDefault(); openBook(e.target.dataset.eq); } });
 $('btnBook').onclick = () => openBook();
 
-
 const setDay = (d) => { $('day').value = ymd(d); renderTimeline(); };
 $('day').value = ymd(new Date());
 $('day').addEventListener('change', renderTimeline);
@@ -235,38 +246,61 @@ $('prevDay').onclick = () => setDay(new Date(new Date($('day').value + 'T00:00:0
 $('nextDay').onclick = () => setDay(new Date(new Date($('day').value + 'T00:00:00').getTime() + 864e5));
 $('today').onclick = () => setDay(new Date());
 
-
 $('btnAdd').onclick = () => $('aModal').classList.add('show');
 $('aCancel').onclick = () => $('aModal').classList.remove('show');
 $('aLab').addEventListener('change', () => { const o = $('aLab').value === 'Other'; $('aOtherW').hidden = !o; $('aOther').required = o; });
 $('aForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const lab = $('aLab').value === 'Other' ? $('aOther').value.trim() : $('aLab').value;
-  const { error } = await supabase.from('equipment').insert({ name: $('aName').value.trim(), lab, asset_code: $('aCode').value.trim() || null, service_due: $('aService').value || null });
-  if (error) return toast(error.message, { error: true });
-  $('aModal').classList.remove('show'); $('aForm').reset(); toast('Equipment added'); loadAll();
+  const row = { name: $('aName').value.trim(), lab, asset_code: $('aCode').value.trim() || null };
+  const due = $('aService').value;
+  let res = await supabase.from('equipment').insert(due ? Object.assign({ service_due: due }, row) : row);
+  
+  if (res.error && due && /service_due/i.test(res.error.message)) {
+    res = await supabase.from('equipment').insert(row);
+    if (!res.error) toast('Added, but service date not saved. Run: alter table equipment add column service_due date;', { error: true });
+  }
+  if (res.error) return toast(res.error.message, { error: true });
+  $('aModal').classList.remove('show'); $('aForm').reset(); $('aOtherW').hidden = true;
+  if (!/not saved/.test($('toast') ? $('toast').textContent : '')) toast('Equipment added');
+  loadAll();
 });
 
 
 $('btnExport').onclick = async () => {
-  const [a, b] = await Promise.all([supabase.from('booking_attempts').select('*').order('created_at'), supabase.from('equipment_bookings').select('*').order('created_at')]);
+  const [a, b] = await Promise.all([
+    supabase.from('booking_attempts').select('*').order('created_at'),
+    supabase.from('equipment_bookings').select('*').order('created_at')
+  ]);
   if (a.error || b.error) return toast((a.error || b.error).message, { error: true });
-  const csv = (rows, cols) => [cols.join(',')].concat(rows.map(r => cols.map(c => JSON.stringify(r[c] == null ? '' : r[c])).join(','))).join('\n');
-  const out = '# booking_attempts\n' + csv(a.data, ['created_at', 'equipment_id', 'starts_at', 'ends_at', 'outcome']) + '\n\n# equipment_bookings\n' + csv(b.data, ['created_at', 'equipment_id', 'kind', 'starts_at', 'ends_at', 'status', 'returned_at']);
-  const l = document.createElement('a'); l.href = URL.createObjectURL(new Blob([out], { type: 'text/csv' })); l.download = 'lab-booking-data.csv'; l.click();
+  const cell = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const csv = (rows, cols) => [cols.join(',')].concat(rows.map(r => cols.map(c => cell(c === 'equipment' ? eqName(r.equipment_id) : r[c])).join(','))).join('\r\n');
+  const out = 'Booking attempts\r\n' + csv(a.data || [], ['created_at', 'equipment', 'starts_at', 'ends_at', 'outcome']) +
+    '\r\n\r\nBookings and maintenance\r\n' + csv(b.data || [], ['created_at', 'equipment', 'kind', 'starts_at', 'ends_at', 'status', 'returned_at']);
+  const url = URL.createObjectURL(new Blob(['\ufeff' + out], { type: 'text/csv;charset=utf-8' }));
+  const l = document.createElement('a'); l.href = url; l.download = 'lab-booking-data-' + ymd(new Date()) + '.csv';
+  document.body.appendChild(l); l.click(); l.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
   toast('Exported without names or emails');
 };
 document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.ov').forEach(o => o.classList.remove('show')); });
-
+ 
+/* ---------- Start ---------- */
 (async () => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) { location.href = 'login.html'; return; }
-  me = user;
-  let m = null; try { m = (await supabase.rpc('my_membership')).data; } catch (e) {}
-  canManage = !m || m.role === 'owner' || m.role === 'teacher';
-  $('orgChip').textContent = m ? m.org_name + (canManage ? ' · Teacher' : ' · Assistant') : 'Personal workspace';
-  $('btnAdd').hidden = !canManage; $('btnExport').hidden = !canManage;
-  loadAll(); setInterval(loadAll, 60000);
+  try {
+    if (typeof supabase === 'undefined' || !supabase.auth) throw new Error('supabaseClient.js did not load. Check that the file exists and its keys are correct.');
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { location.href = 'login.html'; return; }
+    me = user;
+    let m = null; try { m = (await supabase.rpc('my_membership')).data; } catch (e) {}
+    canManage = !m || m.role === 'owner' || m.role === 'teacher';
+    $('orgChip').textContent = m ? m.org_name + (canManage ? ' · Teacher' : ' · Assistant') : 'Personal workspace';
+    $('btnAdd').hidden = !canManage; $('btnExport').hidden = !canManage;
+    await loadAll();
+    setInterval(() => { loadAll().catch(() => {}); }, 60000);
+  } catch (err) {
+    $('tl').innerHTML = '<div class="empty"><b>Could not load</b>' + esc(err.message || err) + '</div>';
+  }
+})();
 })();
 </script>
 <script src="mfa-guard.js"></script>
