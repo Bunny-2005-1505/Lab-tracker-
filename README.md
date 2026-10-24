@@ -45,10 +45,10 @@ Teaching laboratories often use paper registers or spreadsheets. This leads to u
 ## Screenshots
 
 
-![Dashboard](docs/screenshots/dashboard.png)
-![Stock](docs/screenshots/stock.png)
-![Equipment](docs/screenshots/equipment.png)
-![Profile](docs/screenshots/profile.png)
+![Dashboard](docs/screenshots/dashboard.jpg)
+![Stock](docs/screenshots/stock.jpg)
+![Equipment](docs/screenshots/equipment.jpg)
+![Profile](docs/screenshots/profile.jpg)
 
 ## Architecture
 
