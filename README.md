@@ -1,4 +1,5 @@
 # Lab Tracker
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23636484.svg)](https://doi.org/10.5281/zenodo.23636484)
 
 A free, browser-based inventory and equipment booking system for college laboratories. Lab Tracker helps lab staff and students keep track of chemicals, consumables and instruments, get warned before items run out or expire, and book shared instruments without double bookings.
 
