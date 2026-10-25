@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite it as below."
+message: "If you use Lab Tracker, please cite the paper below."
 title: "Lab Tracker"
 type: software
 authors:
@@ -10,10 +10,23 @@ authors:
 repository-code: "https://github.com/Bunny-2005-1505/Lab-tracker-"
 url: "https://lab-tracker.vercel.app"
 license: MIT
-date-released: "2026-10-24"
+date-released: "2026-10-25"
 abstract: "A free, browser-based inventory and equipment booking system for college laboratories, with usage-based stock-out forecasting, expiry warnings and database-enforced conflict-free instrument booking."
 keywords:
   - laboratory inventory
   - equipment booking
   - stock forecasting
   - Supabase
+preferred-citation:
+  type: generic
+  title: "Lab Tracker: A Serverless, Mobile-First System for Usage-Based Stock Forecasting and Conflict-Free Equipment Booking in Educational Laboratories"
+  authors:
+    - family-names: "Pinnu"
+      given-names: "Hemanth Kumar"
+      affiliation: "Vellore Institute of Technology, Andhra Pradesh (VIT-AP University)"
+  year: 2026
+  month: 10
+  doi: "10.5281/zenodo.23636484"
+  publisher:
+    name: "Zenodo"
+  notes: "Preprint, version 1"
