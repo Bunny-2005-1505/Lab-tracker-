@@ -85,7 +85,7 @@ The main workflows were tested with two accounts (one Assistant, one Teacher) on
 
 ## Research paper
 
-A paper describing the design and evaluation is available here: _link to be added after publishing (for example a Zenodo DOI)_.
+A paper describing the design and evaluation is available here: https://doi.org/10.5281/zenodo.23636484
 
 ## Contributing
 
